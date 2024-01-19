@@ -66,3 +66,43 @@ exclude = [
     "CHANGELOG.md",
     "testmanage.py",
 ]
+
+[tool.ruff]
+target-version = "py38"
+
+extend-select = [
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "DJ", # flake8-django
+    "E",  # pycodestyle errors
+    "F",  # pyflakes
+    "FBT", # flake8-boolean-trap
+    "I",   # isort
+    "INT",  # flake8-gettext
+    "ISC",  # flake8-implicit-string-concatenation
+    "PIE", # flake8-pie
+    "PGH", # pygrep-hooks
+    "S",   # flake8-bandit
+    "SIM", # flake8-simplify
+    "W",   # pycodestyle warnings
+    "YTT",   # flake8-2020
+    "UP",  # pyupgrade
+    "RUF100",  # unused noqa
+]
+
+extend-ignore = [
+    "E501",  # no line lenght errors
+]
+fixable = ["C4", "E", "F", "I", "UP"]
+
+[tool.ruff.isort]
+known-first-party = ["src", "wagtail_bynder"]
+lines-between-types = 1
+lines-after-imports = 2
+
+[tool.ruff.per-file-ignores]
+"src/wagtail_bynder/models.py" = [
+    # "Possible SQL injection vector through string-based query construction"
+    # This is a false positive because the lines in question raise an exception
+    "S608",
+]
