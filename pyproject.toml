@@ -1,0 +1,68 @@
+[project]
+name = "wagtail-bynder"
+description = "Wagtail integration with Bynder, a Digital Asset Management System"
+authors = [{name = "Andy Babic ", email = "andy.babic@torchbox.com"}]
+maintainers = [
+    {name = "Andy Babic ", email = "andy.babic@torchbox.com"},
+    {name = "Dan Braghis", email="dan.braghis@torchbox.com"}
+]
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = ["Wagtail", "Django", "Bynder", "DAMS", "digital asset management"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Framework :: Django",
+    "Framework :: Django :: 3.2",
+    "Framework :: Django :: 4.2",
+    "Framework :: Django :: 5.0",
+    "Framework :: Wagtail",
+    "Framework :: Wagtail :: 4",
+    "Framework :: Wagtail :: 5",
+]
+
+dynamic = ["version"]
+requires-python = ">=3.11"
+dependencies = [
+    "Django>=3.2",
+    "Wagtail>=4.1",
+    "bynder-sdk>=1.1.5,<2.0"
+]
+
+[project.optional-dependencies]
+testing = [
+    "dj-database-url>=2.1.0,<3.0",
+    "wagtail_factories>=4.1.0,<5.0",
+    "responses>=0.24,<1",
+    "coverage>=7.0,<8.0",
+]
+
+[project.urls]
+Source = "https://github.com/torchbox/wagtail-bynder"
+Changelog = "https://github.com/torchbox/wagtail-bynder/blob/main/CHANGELOG.md"
+
+
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.flit.module]
+name = "wagtail_bynder"
+
+[tool.flit.sdist]
+exclude = [
+    ".*",
+    "*.db",
+    "*.json",
+    "*.ini",
+    "*.yaml",
+    "tests",
+    "CHANGELOG.md",
+    "testmanage.py",
+]

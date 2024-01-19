@@ -1,0 +1,16 @@
+{% load i18n wagtailadmin_tags %}
+{% load bynder_tags %}
+{% include "wagtailadmin/shared/header.html" with title=page_title merged=1 subtitle=page_subtitle icon=header_icon %}
+<div class="w-tabs">
+    <div class="w-tabs__wrapper"></div>
+    <div class="tab-content">
+        <section
+            id="tab-search"
+            class="w-tabs__panel"
+            role="tabpanel"
+            aria-labelledby="tab-label-search"
+        >
+            <div id="bynderCompactView"></div>
+        </section>
+    </div>
+</div>

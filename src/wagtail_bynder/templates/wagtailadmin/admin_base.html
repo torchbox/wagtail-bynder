@@ -1,0 +1,18 @@
+{% extends "wagtailadmin/admin_base.html" %}
+
+{% load static bynder_tags %}
+
+{% block js %}
+    <script>
+        window.bynderAPIToken = '{% bynder_compactview_api_token %}';
+        window.bynderDomain = '{% bynder_domain %}';
+    </script>
+    <script src="{% static 'wagtailadmin/js/chooser-modal-handler-factory.js' %}"></script>
+
+    {{ block.super }}
+
+    <script src="{% static 'bynder/js/compactview-v4.0.0.js' %}"></script>
+    <script>
+        window.BynderCompactView = BynderCompactView;
+    </script>
+{% endblock js %}
