@@ -6,6 +6,7 @@ from django.shortcuts import redirect
 from wagtail_bynder.models import BynderAssetMixin
 from wagtail_bynder.utils import get_bynder_client
 
+
 if TYPE_CHECKING:
     from django.http import HttpRequest, HttpResponse
 

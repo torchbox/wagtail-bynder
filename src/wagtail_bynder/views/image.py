@@ -9,6 +9,7 @@ from wagtail.images.views.images import edit as image_edit
 
 from .mixins import BynderAssetCopyMixin, RedirectToBynderMixin
 
+
 if TYPE_CHECKING:
     from django.http import HttpRequest, JsonResponse
 

@@ -2,7 +2,11 @@ from django.conf import settings
 from django.db import models
 from wagtail.images.models import AbstractRendition
 
-from wagtail_bynder.models import BynderSyncedDocument, BynderSyncedImage, BynderSyncedVideo
+from wagtail_bynder.models import (
+    BynderSyncedDocument,
+    BynderSyncedImage,
+    BynderSyncedVideo,
+)
 
 
 class CustomDocument(BynderSyncedDocument):

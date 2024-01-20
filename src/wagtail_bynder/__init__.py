@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
+
 def get_video_model_string():
     """
     Get the dotted ``app.Model`` name for the video model as a string.

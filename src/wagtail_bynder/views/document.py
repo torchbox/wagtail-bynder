@@ -9,6 +9,7 @@ from wagtail.documents.views.documents import edit as document_edit
 
 from .mixins import BynderAssetCopyMixin, RedirectToBynderMixin
 
+
 if TYPE_CHECKING:
     from django.http import HttpRequest, JsonResponse
 

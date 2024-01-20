@@ -10,6 +10,7 @@ from wagtail_bynder import get_video_model
 
 from .mixins import BynderAssetCopyMixin, RedirectToBynderMixin
 
+
 if TYPE_CHECKING:
     from django.http import HttpRequest, JsonResponse
 

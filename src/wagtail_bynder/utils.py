@@ -1,13 +1,16 @@
 import mimetypes
 import os
+
 from io import BytesIO
 
 import requests
+
 from asgiref.local import Local
 from bynder_sdk import BynderClient
 from django.conf import settings
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from wagtail.models import Collection
+
 
 _DEFAULT_COLLECTION = Local()
 
@@ -20,7 +23,7 @@ class DownloadedFile(BytesIO):
 
 
 def download_file(url: str) -> DownloadedFile:
-    raw_bytes = requests.get(url).content
+    raw_bytes = requests.get(url, timeout=20).content
     f = DownloadedFile(raw_bytes)
     f.name = os.path.basename(url)
     f.size = len(raw_bytes)

@@ -23,7 +23,7 @@ class TestPatchWagtailURLsMiddleware(SimpleTestCase):
         try:
             yield None
         except exc_type as e:
-            raise self.failureException("{} raised".format(exc_type.__name__)) from e
+            raise self.failureException(f"{exc_type.__name__} raised") from e
 
     def test_wagtail_views_names_have_not_changed(self):
         """
@@ -32,9 +32,8 @@ class TestPatchWagtailURLsMiddleware(SimpleTestCase):
         if they change, our custom views will not be loaded.
         """
         for url_name, args in self.urls:
-            with self.subTest(url_name=url_name):
-                with self.assertNotRaises(NoReverseMatch):
-                    reverse(url_name, args=args)
+            with self.subTest(url_name=url_name), self.assertNotRaises(NoReverseMatch):
+                reverse(url_name, args=args)
 
     @override_settings(
         BYNDER_DISABLE_WAGTAIL_EDITING_FOR_ASSETS=True,

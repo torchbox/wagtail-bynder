@@ -66,7 +66,7 @@ def editor_js():
 
 
 if get_video_model():
-    try:
+    try:  # noqa: SIM105
         register_snippet(VideoViewSet)
-    except Exception:
+    except Exception:  # noqa: S110
         pass

@@ -12,6 +12,7 @@ import os
 
 import dj_database_url
 
+
 env = os.environ.copy()
 
 # Build paths inside the project like this: os.path.join(PROJECT_DIR, ...)
@@ -22,7 +23,7 @@ BASE_DIR = os.path.dirname(PROJECT_DIR)
 # See https://docs.djangoproject.com/en/stable/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "not-a-secret"
+SECRET_KEY = "not-a-secret"  # noqa: S105
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True

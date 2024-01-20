@@ -11,5 +11,5 @@ urlpatterns = [
     path("admin/", include(wagtailadmin_urls)),
     path("documents/", include(wagtaildocs_urls)),
     path("images/", include(wagtailimages_urls)),
-    path("", include(wagtail_urls))
+    path("", include(wagtail_urls)),
 ]

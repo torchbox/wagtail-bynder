@@ -60,8 +60,9 @@ class BaseBynderSyncCommand(BaseCommand):
             results = self.bynder_client.asset_bank_client.media_list(query)
             if not results:
                 break
-            for asset in results:
-                yield asset
+
+            yield from results
+
             page += 1
 
     def get_outdated_objects(self, assets: dict[str, dict[str, Any]]) -> QuerySet:

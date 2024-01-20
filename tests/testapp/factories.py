@@ -1,4 +1,8 @@
-from wagtail_factories.factories import DocumentFactory, ImageFactory, CollectionMemberFactory
+from wagtail_factories.factories import (
+    CollectionMemberFactory,
+    DocumentFactory,
+    ImageFactory,
+)
 
 from .models import CustomDocument, CustomImage, Video
 

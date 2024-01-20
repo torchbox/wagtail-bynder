@@ -2,9 +2,8 @@ from unittest import mock
 
 from django.test import TestCase, override_settings
 from django.urls import reverse, reverse_lazy
-from wagtail.test.utils import WagtailTestUtils
-
 from testapp.factories import CustomDocumentFactory
+from wagtail.test.utils import WagtailTestUtils
 
 from .utils import TEST_ASSET_ID
 

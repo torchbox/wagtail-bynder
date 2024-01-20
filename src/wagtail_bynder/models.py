@@ -1,6 +1,7 @@
 import logging
 import math
 import os
+
 from datetime import datetime
 from mimetypes import guess_type
 from typing import Any
@@ -19,6 +20,7 @@ from wagtail.search import index
 
 from wagtail_bynder import utils
 
+
 logger = logging.getLogger("wagtail.images")
 
 
@@ -27,21 +29,21 @@ class BynderAssetMixin(models.Model):
     bynder_id = models.CharField(
         verbose_name=_("Bynder asset ID"),
         max_length=36,
-        null=True,
+        blank=True,
         unique=True,
         editable=False,
         db_index=True,
     )
-    bynder_id_hash = models.CharField(max_length=100, null=True, editable=False)
+    bynder_id_hash = models.CharField(max_length=100, blank=True, editable=False)
     bynder_original_filename = models.CharField(
-        max_length=255, null=True, editable=False
+        max_length=255, blank=True, editable=False
     )
     bynder_last_modified = models.DateTimeField(
         null=True, editable=False, db_index=True
     )
 
-    # Fields for more broader use
-    description = models.TextField(verbose_name=_("descripton"), blank=True)
+    # Fields for broader use
+    description = models.TextField(verbose_name=_("description"), blank=True)
     copyright = models.TextField(verbose_name=_("copyright info"), blank=True)
     is_archived = models.BooleanField(
         verbose_name=_("asset is archived"), default=False
@@ -274,7 +276,6 @@ class BynderSyncedVideo(
     )
     fallback_source_url = models.URLField(
         blank=True,
-        null=True,
         verbose_name=_("fallback source URL"),
         help_text=(
             "A derivative using an MP4 container and the AVC (H.264) video codec, ideally with "
