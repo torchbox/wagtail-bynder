@@ -30,7 +30,3 @@ def get_video_model():
             "BYNDER_VIDEO_MODEL refers to model '%s' that has not been installed"
             % model_string
         ) from e
-
-
-VERSION = (0, 1, 0)
-__version__ = ".".join(map(str, VERSION))
