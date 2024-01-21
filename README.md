@@ -1,9 +1,9 @@
 # Bynder integration for Wagtail
 
-[![Build status](https://img.shields.io/github/actions/workflow/status/torchbox/wagtail-bynder/test.yml?branch=main)](https://github.com/torchbox/wagtail-bynder/actions)
 [![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD--3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
-[![PyPI version](https://img.shields.io/pypi/v/wagtail-bynder.svg?style=flat)](https://pypi.org/project/wagtail-bynder)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![PyPI version](https://img.shields.io/pypi/v/wagtail-bynder.svg?style=flat)](https://pypi.org/project/wagtail-bynder)
+[![Build status](https://img.shields.io/github/actions/workflow/status/torchbox/wagtail-bynder/test.yml?branch=main)](https://github.com/torchbox/wagtail-bynder/actions)
 
 ## Links
 
@@ -210,3 +210,13 @@ detail view in the Bynder interface.
 
 The default is value is `False`, because it can be useful to use the Wagtail representation to check that file, metadata
 and focal points are being accurately reflected.
+
+## Contributing
+
+All contributions are welcome! See [CONTRIBUTING.md](https://github.com/torchbox/wagtail-bynder/blob/main/CONTRIBUTING.md)
+
+Supported versions:
+
+- Python 3.11, 3.12
+- Django 3.2, 4.2, 5.0
+- Wagtail 4.1 (LTS), 5.1, 5.2 (LTS)
