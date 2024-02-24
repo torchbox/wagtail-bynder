@@ -29,11 +29,32 @@ When an asset is selected, Wagtail silently downloads the file and related metad
 are saved on the object when this happens, helping Wagtail to recognise when it already has a copy of an asset,
 and to help keep them up-to-date with changes made in Bynder.
 
-Currently, changes are synced from Bynder back to Wagtail via a couple of well optimised management commands,
+Currently, changes are synced from Bynder back to Wagtail via a few well-optimised management commands,
 intended to be run regularly (via a cron job):
 
 - `python manage.py update_stale_images`
 - `python manage.py update_stale_documents`
+- `python manage.py update_stale_videos`
+
+By default, these commands only fetch data for assets updated within the last 24 hours. However, you can use the `minutes`, `hours` or `days` options to narrow or widen this timespan. For example:
+
+To sync images updated within the last 30 minutes only:
+
+```sh
+$ python manage.py update_stale_images --minutes=30
+```
+
+To sync images updated within the last three hours only:
+
+```sh
+$ python manage.py update_stale_images --hours=3
+```
+
+To sync images updated within the last three days:
+
+```sh
+$ python manage.py update_stale_images --days=3
+```
 
 ## Installation
 
@@ -81,7 +102,7 @@ class CustomDocument(BynderSyncedDocument):
 
 Finally, run Django's `makemigrations` and `migrate` commands to apply any model field changes to your project
 
-```shell
+```sh
 $ python manage.py makemigrations
 $ python manage.py migrate
 ```
@@ -129,7 +150,7 @@ BYNDER_VIDEO_MODEL = "videos.Video"
 
 Finally, run Django's `makemigrations` and `migrate` commands to create and apply the model changes in your project.
 
-```shell
+```sh
 $ python manage.py makemigrations
 $ python manage.py migrate
 ```
