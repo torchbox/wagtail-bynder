@@ -183,7 +183,7 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
         super().update_from_asset_data(asset_data)
 
         # Update the focal area if a focus point is set
-        focus_point = asset_data.get("activeOriginalFocusPoint", None)
+        focus_point = asset_data.get("activeOriginalFocusPoint")
         if focus_point:
             self.set_focal_area_from_focus_point(
                 int(focus_point["x"]),
@@ -357,7 +357,7 @@ class BynderSyncedVideo(
                 f"asset are: {derivatives}"
             ) from None
 
-        self.fallback_source_url = derivatives.get(fallback_derivative_name, None)
+        self.fallback_source_url = derivatives.get(fallback_derivative_name)
 
         thumbnails = asset_data["thumbnails"]
         try:
