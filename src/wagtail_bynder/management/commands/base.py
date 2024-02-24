@@ -7,7 +7,6 @@ from django.db.models import Model
 from django.db.models.base import ModelBase
 from django.db.models.query import Q, QuerySet
 from django.utils import timezone
-from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
 from wagtail_bynder.utils import get_bynder_client
@@ -79,10 +78,7 @@ class BaseBynderSyncCommand(BaseCommand):
         # Process any remaining assets
         if asset_dict:
             self.update_outdated_objects(asset_dict)
-
-    @cached_property
-    def min_date_modified(self) -> timezone.datetime:
-        return timezone.now() - timezone.timedelta(days=self.modified_within_days)
+            self.process_batch(asset_dict)
 
     def get_assets(self) -> Generator[dict[str, Any]]:
         """
