@@ -92,7 +92,7 @@ class BaseBynderSyncCommand(BaseCommand):
         page = 1
         while True:
             query = {
-                "dateModified": self.min_date_modified,
+                "dateModified": self.date_modified_from.strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "orderBy": "dateModified desc",
                 "page": page,
                 "limit": self.page_size,
