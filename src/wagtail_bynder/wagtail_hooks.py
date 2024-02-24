@@ -44,7 +44,7 @@ def hide_image_and_document_summary_items(request, summary_items):
         summary_items[:] = [
             item
             for item in summary_items
-            if not isinstance(item, (ImagesSummaryItem, DocumentsSummaryItem))
+            if not isinstance(item, ImagesSummaryItem | DocumentsSummaryItem)
         ]
 
 
