@@ -63,6 +63,7 @@ class BaseBynderSyncCommand(BaseCommand):
             f"Looking for {self.bynder_asset_type or 'all'} assets modified in the last {timespan_desc}"
         )
 
+        self.batch_count = 1
         self.bynder_client = get_bynder_client()
         asset_dict: dict[str, dict[str, Any]] = {}
 
@@ -71,13 +72,12 @@ class BaseBynderSyncCommand(BaseCommand):
             asset_dict[asset["id"]] = asset
             # Process the gathered assets once the batch reaches a certain size
             if len(asset_dict) == self.page_size:
-                self.update_outdated_objects(asset_dict)
+                self.process_batch(asset_dict)
                 # Clear this batch to start another
                 asset_dict.clear()
 
         # Process any remaining assets
         if asset_dict:
-            self.update_outdated_objects(asset_dict)
             self.process_batch(asset_dict)
 
     def get_assets(self) -> Generator[dict[str, Any]]:
@@ -98,12 +98,29 @@ class BaseBynderSyncCommand(BaseCommand):
             results = self.bynder_client.asset_bank_client.media_list(query)
             if not results:
                 break
-
             yield from results
-
+            if len(results) < self.page_size:
+                break
             page += 1
+        return
 
-    def get_outdated_objects(self, assets: dict[str, dict[str, Any]]) -> QuerySet:
+    def process_batch(self, assets: dict[str, dict[str, Any]]) -> None:
+        """
+        Identifies and updates (where needed) model objects to reflect changes
+        in the supplied 'batch' of Bynder assets.
+        """
+        self.stdout.write(
+            f"Processing batch {self.batch_count} ({len(assets)} assets)..."
+        )
+        self.batch_count += 1
+
+        stale = self.get_stale_objects(assets)
+        self.stdout.write(f"{len(stale)} stale objects were found for this batch.")
+        for obj in stale:
+            data = assets.get(obj.bynder_id)
+            self.update_object(obj, data)
+
+    def get_stale_objects(self, assets: dict[str, dict[str, Any]]) -> QuerySet:
         """
         Return a queryset of model instances that represent items in the supplied
         batch of assets, and are out-of-sync with the data in Bynder (and
@@ -115,15 +132,6 @@ class BaseBynderSyncCommand(BaseCommand):
             # that from Bynder (which means it is already up-to-date)
             q |= Q(bynder_id=id, bynder_last_modified__lt=asset["dateModified"])
         return self.model.objects.filter(q)
-
-    def update_outdated_objects(self, assets: dict[str, dict[str, Any]]) -> None:
-        """
-        Identifies and updates (where needed) model objects to reflect changes
-        in the supplied 'batch' of Bynder assets.
-        """
-        for obj in self.get_outdated_objects(assets):
-            data = assets.get(obj.bynder_id)
-            self.update_object(obj, data)
 
     def update_object(self, obj: Model, asset_data: dict[str:Any]) -> None:
         self.stdout.write("\n")
