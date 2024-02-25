@@ -7,7 +7,7 @@ from django.db.models import Model
 from django.db.models.base import ModelBase
 from django.db.models.query import Q, QuerySet
 from django.utils import timezone
-from django.utils.functional import cached_property
+from django.utils.translation import gettext_lazy as _
 
 from wagtail_bynder.utils import get_bynder_client
 
@@ -17,11 +17,57 @@ class BaseBynderSyncCommand(BaseCommand):
     page_size: int = 200
     model: ModelBase = None
 
-    # Limits how far in the past to look for modified assets
-    # TODO: Make this a command-line option
-    modified_within_days: int = 1
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--minutes",
+            type=int,
+            help=_(
+                "The number of minutes into the past to look for asset "
+                "modifications."
+            ),
+        )
+        parser.add_argument(
+            "--hours",
+            type=int,
+            help=_(
+                "The number of hours into the past to look for asset "
+                "modifications (takes precedence over 'minutes')"
+            ),
+        )
+        parser.add_argument(
+            "--days",
+            type=int,
+            help=_(
+                "The number of days in the past to look for asset "
+                "modifications (takes precedence over 'hours' and 'minutes')"
+            ),
+        )
 
     def handle(self, *args, **options):
+        # Default timespan to 1 day (1440 minutes)
+        minutes = options.get("minutes")
+        hours = options.get("hours")
+        days = options.get("days")
+        if days:
+            timespan = timezone.timedelta(days=days)
+            timespan_desc = f"{days} day(s)"
+        elif hours:
+            timespan = timezone.timedelta(hours=hours)
+            timespan_desc = f"{hours} hour(s)"
+        elif minutes:
+            timespan = timezone.timedelta(minutes=minutes)
+            timespan_desc = f"{minutes} minute(s)"
+        else:
+            timespan = timezone.timedelta(days=1)
+            timespan_desc = "1 day"
+
+        self.date_modified_from = datetime.utcnow() - timespan
+
+        self.stdout.write(
+            f"Looking for {self.bynder_asset_type or 'all'} assets modified within the last {timespan_desc}"
+        )
+
+        self.batch_count = 1
         self.bynder_client = get_bynder_client()
         asset_dict: dict[str, dict[str, Any]] = {}
 
@@ -30,17 +76,13 @@ class BaseBynderSyncCommand(BaseCommand):
             asset_dict[asset["id"]] = asset
             # Process the gathered assets once the batch reaches a certain size
             if len(asset_dict) == self.page_size:
-                self.update_outdated_objects(asset_dict)
+                self.process_batch(asset_dict)
                 # Clear this batch to start another
                 asset_dict.clear()
 
         # Process any remaining assets
         if asset_dict:
-            self.update_outdated_objects(asset_dict)
-
-    @cached_property
-    def min_date_modified(self) -> timezone.datetime:
-        return timezone.now() - timezone.timedelta(days=self.modified_within_days)
+            self.process_batch(asset_dict)
 
     def get_assets(self) -> Generator[dict[str, Any]]:
         """
@@ -50,7 +92,9 @@ class BaseBynderSyncCommand(BaseCommand):
         page = 1
         while True:
             query = {
-                "dateModified": self.min_date_modified,
+                # Datetimes must be supplied in ISO 8601 format without microseconds. See:
+                # https://bynder.docs.apiary.io/#reference/assets/asset-operations/retrieve-assets
+                "dateModified": self.date_modified_from.strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "orderBy": "dateModified desc",
                 "page": page,
                 "limit": self.page_size,
@@ -60,12 +104,29 @@ class BaseBynderSyncCommand(BaseCommand):
             results = self.bynder_client.asset_bank_client.media_list(query)
             if not results:
                 break
-
             yield from results
-
+            if len(results) < self.page_size:
+                break
             page += 1
+        return
 
-    def get_outdated_objects(self, assets: dict[str, dict[str, Any]]) -> QuerySet:
+    def process_batch(self, assets: dict[str, dict[str, Any]]) -> None:
+        """
+        Identifies and updates (where needed) model objects to reflect changes
+        in the supplied 'batch' of Bynder assets.
+        """
+        self.stdout.write(
+            f"Processing batch {self.batch_count} ({len(assets)} assets)..."
+        )
+        self.batch_count += 1
+
+        stale = self.get_stale_objects(assets)
+        self.stdout.write(f"{len(stale)} stale objects were found for this batch.")
+        for obj in stale:
+            data = assets.get(obj.bynder_id)
+            self.update_object(obj, data)
+
+    def get_stale_objects(self, assets: dict[str, dict[str, Any]]) -> QuerySet:
         """
         Return a queryset of model instances that represent items in the supplied
         batch of assets, and are out-of-sync with the data in Bynder (and
@@ -77,15 +138,6 @@ class BaseBynderSyncCommand(BaseCommand):
             # that from Bynder (which means it is already up-to-date)
             q |= Q(bynder_id=id, bynder_last_modified__lt=asset["dateModified"])
         return self.model.objects.filter(q)
-
-    def update_outdated_objects(self, assets: dict[str, dict[str, Any]]) -> None:
-        """
-        Identifies and updates (where needed) model objects to reflect changes
-        in the supplied 'batch' of Bynder assets.
-        """
-        for obj in self.get_outdated_objects(assets):
-            data = assets.get(obj.bynder_id)
-            self.update_object(obj, data)
 
     def update_object(self, obj: Model, asset_data: dict[str:Any]) -> None:
         self.stdout.write("\n")

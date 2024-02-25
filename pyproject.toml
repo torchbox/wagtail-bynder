@@ -41,6 +41,7 @@ testing = [
     "wagtail_factories>=4.1.0,<5.0",
     "responses>=0.24,<1",
     "coverage>=7.0,<8.0",
+    "freezegun>=1.1,<2",
 ]
 
 [project.urls]
