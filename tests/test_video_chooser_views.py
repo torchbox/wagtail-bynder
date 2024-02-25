@@ -19,7 +19,9 @@ class TestVideoChooseView(TestCase, WagtailTestUtils):
 
 
 class TestImageChosenView(TransactionTestCase, WagtailTestUtils):
-    url = reverse_lazy("wagtailsnippetchoosers_testapp_video:chosen", args=[TEST_ASSET_ID])
+    url = reverse_lazy(
+        "wagtailsnippetchoosers_testapp_video:chosen", args=[TEST_ASSET_ID]
+    )
 
     def setUp(self):
         # Always log in as an admin user
@@ -47,7 +49,9 @@ class TestImageChosenView(TransactionTestCase, WagtailTestUtils):
                 "result": {
                     "id": str(video.id),
                     "string": video.title,
-                    "edit_url": reverse("wagtailsnippets_testapp_video:edit", args=[video.id]),
+                    "edit_url": reverse(
+                        "wagtailsnippets_testapp_video:edit", args=[video.id]
+                    ),
                 },
             },
         )
@@ -73,7 +77,9 @@ class TestImageChosenView(TransactionTestCase, WagtailTestUtils):
                 "result": {
                     "id": str(video.id),
                     "string": video.title,
-                    "edit_url": reverse("wagtailsnippets_testapp_video:edit", args=[video.id]),
+                    "edit_url": reverse(
+                        "wagtailsnippets_testapp_video:edit", args=[video.id]
+                    ),
                 },
             },
         )
@@ -99,7 +105,9 @@ class TestImageChosenView(TransactionTestCase, WagtailTestUtils):
                 "result": {
                     "id": str(video.id),
                     "string": video.title,
-                    "edit_url": reverse("wagtailsnippets_testapp_video:edit", args=[video.id]),
+                    "edit_url": reverse(
+                        "wagtailsnippets_testapp_video:edit", args=[video.id]
+                    ),
                 },
             },
         )
