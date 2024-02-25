@@ -5,6 +5,7 @@ from unittest import mock
 
 from django.core.management import call_command
 from django.test import SimpleTestCase, TestCase
+from freezegun import freeze_time
 from testapp.factories import CustomDocumentFactory, CustomImageFactory, VideoFactory
 from wagtail.documents import get_document_model
 from wagtail.images import get_image_model
@@ -94,6 +95,7 @@ class BaseSyncCommandTestCase(SimpleTestCase):
         return out.getvalue()
 
 
+@freeze_time()
 class UpdateStaleImagesTestCase(BaseSyncCommandTestCase):
     """
     Unit tests for the 'update_stale_images' management command.
@@ -208,6 +210,7 @@ class UpdateStaleImagesTestCase(BaseSyncCommandTestCase):
         self.patched_obj.save.assert_called_once()
 
 
+@freeze_time()
 class UpdateStaleDocumentsTestCase(BaseSyncCommandTestCase):
     """
     Unit tests for the 'update_stale_documents' management command.
@@ -309,6 +312,7 @@ class UpdateStaleDocumentsTestCase(BaseSyncCommandTestCase):
         self.patched_obj.save.assert_called_once()
 
 
+@freeze_time()
 class UpdateStaleVideosTestCase(BaseSyncCommandTestCase):
     """
     Unit tests for the 'update_stale_videos' management command.
