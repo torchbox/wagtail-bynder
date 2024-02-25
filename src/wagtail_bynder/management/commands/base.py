@@ -92,6 +92,8 @@ class BaseBynderSyncCommand(BaseCommand):
         page = 1
         while True:
             query = {
+                # Datetimes must be supplied in ISO 8601 format without microseconds. See:
+                # https://bynder.docs.apiary.io/#reference/assets/asset-operations/retrieve-assets
                 "dateModified": self.date_modified_from.strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "orderBy": "dateModified desc",
                 "page": page,
