@@ -71,10 +71,6 @@ class SyncCommandTestsMixin:
         # Patch save() to prevent unnecessary database writes
         self.patched_obj.save = mock.Mock()
 
-        # Create an iterable containing the patched object
-        # To be returned by a patched get_stale_objects() method
-        self.mock_stale_objects = (self.patched_obj,)
-
     def call_command(self, *args, **kwargs):
         """
         Calls the command with the provided arguments, whilst also also mocking
@@ -91,7 +87,7 @@ class SyncCommandTestsMixin:
             ),
             mock.patch(
                 "wagtail_bynder.management.commands.base.BaseBynderSyncCommand.get_stale_objects",
-                return_value=self.mock_stale_objects,
+                return_value=(self.patched_obj,),
             ),
         ):
             call_command(
