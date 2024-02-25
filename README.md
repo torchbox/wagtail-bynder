@@ -199,6 +199,14 @@ Default: `False`
 
 As `BYNDER_SYNC_EXISTING_IMAGES_ON_CHOOSE`, but for documents.
 
+### `BYNDER_SYNC_EXISTING_VIDEOS_ON_CHOOSE`
+
+Example: `True`
+
+Default: `False`
+
+As `BYNDER_SYNC_EXISTING_IMAGES_ON_CHOOSE`, but for videos.
+
 ### `BYNDER_DISABLE_WAGTAIL_EDITING_FOR_ASSETS`
 
 Example: `True`

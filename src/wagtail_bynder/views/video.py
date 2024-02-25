@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from django.conf import settings
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.views.generic.chooser import ChooseView
@@ -37,7 +38,8 @@ class VideoChosenView(SnippetChosenView, BynderAssetCopyMixin):
         except self.model.DoesNotExist:
             obj = self.create_object(pk)
         else:
-            self.update_object(pk, obj)
+            if getattr(settings, "BYNDER_SYNC_EXISTING_VIDEOS_ON_CHOOSE", False):
+                self.update_object(pk, obj)
         return self.get_chosen_response(obj)
 
 
