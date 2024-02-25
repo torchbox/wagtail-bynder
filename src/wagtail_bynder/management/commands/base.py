@@ -31,7 +31,7 @@ class BaseBynderSyncCommand(BaseCommand):
             type=int,
             help=_(
                 "The number of hours into the past to look for asset "
-                "modifications (takes prescedence over 'minutes')"
+                "modifications (takes precedence over 'minutes')"
             ),
         )
         parser.add_argument(
@@ -39,7 +39,7 @@ class BaseBynderSyncCommand(BaseCommand):
             type=int,
             help=_(
                 "The number of days in the past to look for asset "
-                "modifications (takes prescedence over 'hours' and 'minutes')"
+                "modifications (takes precedence over 'hours' and 'minutes')"
             ),
         )
 
@@ -47,20 +47,24 @@ class BaseBynderSyncCommand(BaseCommand):
         # Default timespan to 1 day (1440 minutes)
         minutes = options.get("minutes")
         hours = options.get("hours")
-        days = options.get("days") or 1
-        if hours:
+        days = options.get("days")
+        if days:
+            timespan = timezone.timedelta(days=days)
+            timespan_desc = f"{days} day(s)"
+        elif hours:
             timespan = timezone.timedelta(hours=hours)
             timespan_desc = f"{hours} hour(s)"
         elif minutes:
             timespan = timezone.timedelta(minutes=minutes)
             timespan_desc = f"{minutes} minute(s)"
         else:
-            timespan = timezone.timedelta(days=days)
-            timespan_desc = f"{days} day(s)"
+            timespan = timezone.timedelta(days=1)
+            timespan_desc = "1 day"
+
         self.date_modified_from = datetime.utcnow() - timespan
 
         self.stdout.write(
-            f"Looking for {self.bynder_asset_type or 'all'} assets modified in the last {timespan_desc}"
+            f"Looking for {self.bynder_asset_type or 'all'} assets modified within the last {timespan_desc}"
         )
 
         self.batch_count = 1
