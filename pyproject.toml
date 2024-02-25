@@ -61,8 +61,10 @@ exclude = [
     "*.db",
     "*.json",
     "*.ini",
+    "*.sqlite3",
     "*.yaml",
     "tests",
     "CHANGELOG.md",
+    "ruff.toml",
     "testmanage.py",
 ]
