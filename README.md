@@ -93,7 +93,22 @@ plus blocks and chooser widgets to help use them in your project. However, becau
 and project-specific requirements around video usage can be a little more custom,
 the model is `abstract` - you need to subclass it in order to use the functionality.
 
-First, import the abstract `BynderSyncedVideo` model and subclass it within your project to create a concrete model.
+First, ensure you have `wagtail.snippets` in your project's `INSTALLED_APPS`:
+
+```python: highlight-line=7
+INSTALLED_APPS = [
+  # ...
+  "wagtail.users",
+  "wagtail.admin",
+  "wagtail.documents",
+  "wagtail.images",
+  "wagtail.snippets",
+  "wagtail",
+   # ...
+]
+```
+
+Next, import the abstract `BynderSyncedVideo` model and subclass it within your project to create a concrete model.
 For example:
 
 ```python
@@ -105,7 +120,7 @@ class Video(BynderSyncedVideo):
     pass
 ```
 
-Next, in your project's Django settings, add a `BYNDER_VIDEO_MODEL` item to establish your custom model as the 'official'
+Then, in your project's Django settings, add a `BYNDER_VIDEO_MODEL` item to establish your custom model as the 'official'
 video model. The value should be a string in the format `"app_label.Model"`. For example:
 
 ```python
