@@ -3,7 +3,7 @@ name = "wagtail-bynder"
 description = "Wagtail integration with Bynder, a Digital Asset Management System"
 authors = [{name = "Andy Babic ", email = "andy.babic@torchbox.com"}]
 maintainers = [
-    {name = "Andy Babic ", email = "andy.babic@torchbox.com"},
+    {name = "Andy Babic", email = "andy.babic@torchbox.com"},
     {name = "Dan Braghis", email="dan.braghis@torchbox.com"}
 ]
 readme = "README.md"

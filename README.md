@@ -79,7 +79,7 @@ class CustomDocument(BynderSyncedDocument):
     pass
 ```
 
-Finally, run Django's m`akemigrations` and `migrate` commands to apply any model field changes to your project
+Finally, run Django's `makemigrations` and `migrate` commands to apply any model field changes to your project
 
 ```shell
 $ python manage.py makemigrations
