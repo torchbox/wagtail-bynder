@@ -56,6 +56,56 @@ To sync images updated within the last three days:
 $ python manage.py update_stale_images --days=3
 ```
 
+## What to ask of Bynder
+
+
+### Derivatives for images and videos
+
+When communicating with Bynder about configuring an instance for compatibility with Wagtail, it's important to highlight the derivatives you need for images and video.
+
+It is common for assets to be uploaded to a DAMS in formats that preserve as much quality as possible. For example, high-resolution uncompressed TIFF images are common for digital photography. Such formats are great for print and other media, but are simply overkill for most websites. Not only are images likely to be shown at much smaller dimensions on the web, but they are also likely to be converted to more web-friendly formats like AVIF or WebP, where the image quality of an uncompressed TIFF is unlikely to shine through.
+
+Unnecessarily large file sizes also have a long-term detrimental impact on website performance. Not only must editors wait longer for images to be download initially, but, every time a new rendition is needed, the original must be loaded into memory from wherever it is stored, using valuable system resources, and potentially leading to server timeouts.
+
+#### 'WagtailSource' derivative for images
+
+What Wagtail really needs is a reliable, high quality derivative, which it can use as a 'source' to generated renditions from. This should strikes the right balance between:
+
+- Being large enough to use in most website contexts (Think full-width hero images that need to look decent on a large high-resolution display). A maximum width or height of **3500 pixels** is usually enough for this.
+- Retaining as much visual quality as possible, whilst keeping file sizes reasonable. Individual images will naturally vary, but somewhere **between 4MB and 6MB** is a reasonable target.
+
+In most cases, `JPG` will probably the best option. But, for fine art images with lots of uniform colour and sharp edges, `PNG` might be a better fit.
+
+Once configured, URLs for the new derivative should appear in under `"thumbnails"` in the API representation for image assets, like so:
+
+```json
+"thumbnails": {
+  "mini": "https://orgname.bynder.com/m/3ece125489f192fa/YourGroovyImage.png",
+  "thul": "https://orgname.bynder.com/m/3ece125489f192fa/thul-YourGroovyImage.png",
+  "webimage": "https://orgname.bynder.com/m/3ece125489f192fa/webimage-YourGroovyImage.png",
+  "WagtailSource": "https://orgname.bynder.com/m/3ece125489f192fa/WagtailSource-YourGroovyImage.jpg",
+}
+```
+
+### 'WebPrimary' and 'WebFallback' derivatives for videos
+
+The goal here is to ensure video can be seen by the widest possibly audience (Wagtail doesn't take a copy of video media like it does for image - as it isn't well equipped for re-encoding it).
+
+Support for media container formats, video and audio codecs has become more consistant over the years. But, even in 2024, the general consensus is that video on the web should be provided in two different formats in order to work for the widest audience. So, we recommend that Bynder generate two derivatives for videos:
+
+**WebPrimary**: A derivative using a WebM container, the VP9 codec for video and the Opus codec for audio. These are all open, royalty-free formats which are generally well-supported, although only in quite recent browsers, which is why a fallback is a good idea.
+
+**WebFallback**: A derivative using an MP4 container and the AVC (H.264) video codec, ideally with the AAC codec for audio. This combination has great support in every major browser, and the quality is typically good for most use cases.
+
+Once configured, URLs for the new derivatives should appear in under `"videoPreviewURLs"` in the API representation for video assets, like so:
+
+```json
+"videoPreviewURLs": [
+  "https://orgname.bynder.com/asset/52477218-06f5-4e55-ad55-049bf33b105f/WebPrimary/WebPrimary-YourGroovyVideo.web",
+  "https://orgname.bynder.com/asset/52477218-06f5-4e55-ad55-049bf33b105f/WebFallback/WebFallback-YourGroovyVideo.mp4",
+]
+```
+
 ## Installation
 
 In your project's Django settings, add the app your `INSTALLED_APPS` list (at the end is fine):
