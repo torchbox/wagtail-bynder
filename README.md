@@ -69,7 +69,7 @@ When communicating with Bynder about configuring a new instance for compatibilit
 
 It is common for assets to be uploaded to a DAMS in formats that preserve as much quality as possible. For example, high-resolution uncompressed TIFF images are common for digital photography. Whilst great for print and other media, such formats are simply overkill for most websites. Not only are images likely to be shown at much smaller dimensions in a web browser, but they are also likely to be converted to more web-friendly formats like AVIF or WebP by Wagtail, where the image quality of an uncompressed TIFF is unlikely to shine through.
 
-You might not notice immediately. But, over time, unnecessarily large source images will have a compounding impact on website performance. Not only must editors wait longer for Wagtail to download the images from Bynder initially, but, every time a new rendition is needed, the original must be loaded into memory from wherever it is stored. Not only will this suck up precious system memory, but the reading of file contents will require longer (often blocking) I/O operations too.
+Over time, unnecessarily large source images will have a compounding impact on website performance. Editors will need to wait longer for Wagtail to download the images from Bynder. And, every time a new rendition is needed, the original must be loaded into memory from wherever it is stored, consuming precious system memory, and blocking system I/O operations for longer while reading from storage.
 
 #### 'WagtailSource' derivative for images
 
