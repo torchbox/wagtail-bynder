@@ -80,7 +80,7 @@ What Wagtail really needs is a reliable, high quality derivative, which it can u
 
 In most cases, `JPG` will probably the best option. But, for fine art images with lots of uniform colour and sharp edges, `PNG` might be a better fit.
 
-Once configured, URLs for the new derivative should appear in under `"thumbnails"` in the API representation for image assets, like so:
+Once configured, URLs for the new derivative should appear under `"thumbnails"` in the API representation for image assets, like so:
 
 ```json
 "thumbnails": {
@@ -101,7 +101,7 @@ Support for media container formats, video and audio codecs has become more cons
 
 **WebFallback**: A derivative using an MP4 container and the AVC (H.264) video codec, ideally with the AAC codec for audio. This combination has great support in every major browser, and the quality is typically good for most use cases.
 
-Once configured, URLs for the new derivatives should appear in under `"videoPreviewURLs"` in the API representation for video assets, like so:
+Once configured, URLs for the new derivatives should appear under `"videoPreviewURLs"` in the API representation for video assets, like so:
 
 ```json
 "videoPreviewURLs": [
