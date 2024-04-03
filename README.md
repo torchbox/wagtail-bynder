@@ -95,7 +95,7 @@ Once configured, URLs for the new derivative should appear in under `"thumbnails
 
 The goal here is to ensure video can be seen by the widest possibly audience (Wagtail doesn't take a copy of video media like it does for image - as it isn't well equipped for re-encoding it).
 
-Support for media container formats, video and audio codecs has become more consistant over the years. But, even in 2024, the general consensus is that video on the web should be provided in two different formats in order to work for the widest audience. So, we recommend that Bynder generate **two** custom derivatives for videos:
+Support for media container formats, video and audio codecs has become more consistant over the years. The general consensus is that video on the web should be provided in two different formats in order to work for the widest audience. So, we recommend that Bynder generate **two** custom derivatives for videos:
 
 **WebPrimary**: A derivative using a WebM container, the VP9 codec for video and the Opus codec for audio. These are all open, royalty-free formats which are generally well-supported, although only in quite recent browsers, which is why a fallback is a good idea.
 
