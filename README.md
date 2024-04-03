@@ -73,7 +73,7 @@ Over time, unnecessarily large source images will have a compounding impact on w
 
 #### 'WagtailSource' derivative for images
 
-What Wagtail really needs is a reliable, high quality derivative, which it can use as a 'source' to generated renditions from. This should strikes the right balance between:
+What Wagtail really needs is a reliable, high quality derivative, which it can use as a 'source' to generate renditions from. This should strike the right balance between:
 
 - Being large enough to use in most website contexts (Think full-width hero images that need to look decent on a large high-resolution display). A maximum width or height of **3500 pixels** is usually enough for this.
 - Retaining as much visual quality as possible, whilst keeping file sizes reasonable. Individual images will naturally vary, but somewhere **between 4MB and 6MB** is a reasonable target.
