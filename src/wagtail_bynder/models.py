@@ -33,7 +33,6 @@ class BynderAssetMixin(models.Model):
         db_index=True,
         null=True,
     )
-    bynder_id_hash = models.CharField(max_length=100, blank=True, editable=False)
     bynder_last_modified = models.DateTimeField(
         null=True, editable=False, db_index=True
     )
@@ -104,7 +103,6 @@ class BynderAssetMixin(models.Model):
         self.copyright = asset_data.get("copyright", self.copyright)
         self.description = asset_data.get("description", self.description)
         self.collection = self.get_target_collection(asset_data)
-        self.bynder_id_hash = asset_data["idHash"]
         self.bynder_last_modified = asset_data["dateModified"]
         self.is_archived = bool(asset_data.get("archive", 0))
         self.is_limited_use = bool(asset_data.get("limited", 0))
