@@ -8,7 +8,6 @@ from typing import Any
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
@@ -36,11 +35,17 @@ class BynderAssetMixin(models.Model):
         null=True,
     )
     bynder_id_hash = models.CharField(max_length=100, blank=True, editable=False)
-    bynder_original_filename = models.CharField(
-        max_length=255, blank=True, editable=False
-    )
     bynder_last_modified = models.DateTimeField(
         null=True, editable=False, db_index=True
+    )
+    source_filename = models.CharField(
+        verbose_name=_("source filename"),
+        max_length=255,
+        blank=True,
+        editable=False,
+    )
+    original_filesize = models.IntegerField(
+        verbose_name=_("original filesize"), editable=False, null=True
     )
 
     # Fields for broader use
@@ -138,6 +143,12 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
         Image.admin_form_fields + BynderAssetMixin.extra_admin_form_fields
     )
 
+    original_width = models.IntegerField(
+        verbose_name=_("original width"), null=True, editable=False
+    )
+    original_height = models.IntegerField(
+        verbose_name=_("original height"), null=True, editable=False
+    )
 
     search_fields = (
         AbstractImage.search_fields + BynderAssetWithFileMixin.extra_search_fields
@@ -235,6 +246,12 @@ class BynderSyncedVideo(
     )
     updated_at = models.DateTimeField(
         verbose_name=_("last updated at"), auto_now=True, db_index=True
+    )
+    original_width = models.IntegerField(
+        verbose_name=_("original width"), null=True, editable=False
+    )
+    original_height = models.IntegerField(
+        verbose_name=_("original height"), null=True, editable=False
     )
     primary_source_url = models.URLField(
         verbose_name=_("primary source URL"),
