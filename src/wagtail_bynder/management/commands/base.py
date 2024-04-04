@@ -1,21 +1,28 @@
-from collections.abc import Generator
+from collections.abc import Iterable
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from django.core.management.base import BaseCommand
-from django.db.models import Model
 from django.db.models.base import ModelBase
-from django.db.models.query import Q, QuerySet
+from django.db.models.query import Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from wagtail_bynder.models import BynderAssetMixin
 from wagtail_bynder.utils import get_bynder_client
+
+
+if TYPE_CHECKING:
+    from django.db.models.query import QuerySet
 
 
 class BaseBynderSyncCommand(BaseCommand):
     bynder_asset_type: str = ""
     page_size: int = 200
-    model: ModelBase = None
+    model: ModelBase | None = None
+
+    def get_queryset(self) -> "QuerySet":
+        return self.model.objects.all()  # type: ignore[attr-defined]
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -84,7 +91,7 @@ class BaseBynderSyncCommand(BaseCommand):
         if asset_dict:
             self.process_batch(asset_dict)
 
-    def get_assets(self) -> Generator[dict[str, Any]]:
+    def get_assets(self) -> Iterable[dict[str, Any]]:
         """
         A generator method that yields all relevant Bynder assets, one at a time.
         It silently uses pagination to ensure all possible assets are returned.
@@ -123,10 +130,10 @@ class BaseBynderSyncCommand(BaseCommand):
         stale = self.get_stale_objects(assets)
         self.stdout.write(f"{len(stale)} stale objects were found for this batch.")
         for obj in stale:
-            data = assets.get(obj.bynder_id)
+            data = assets[obj.bynder_id]
             self.update_object(obj, data)
 
-    def get_stale_objects(self, assets: dict[str, dict[str, Any]]) -> QuerySet:
+    def get_stale_objects(self, assets: dict[str, dict[str, Any]]) -> "QuerySet":
         """
         Return a queryset of model instances that represent items in the supplied
         batch of assets, and are out-of-sync with the data in Bynder (and
@@ -137,16 +144,17 @@ class BaseBynderSyncCommand(BaseCommand):
             # excluding anything where 'bynder_last_modified' value is equal to
             # that from Bynder (which means it is already up-to-date)
             q |= Q(bynder_id=id, bynder_last_modified__lt=asset["dateModified"])
-        return self.model.objects.filter(q)
+        return self.get_queryset().filter(q)
 
-    def update_object(self, obj: Model, asset_data: dict[str:Any]) -> None:
+    def update_object(self, obj: BynderAssetMixin, asset_data: dict[str, Any]) -> None:
         self.stdout.write("\n")
         self.stdout.write(f"Updating object for asset '{asset_data['id']}'")
-        time_diff = (
-            datetime.fromisoformat(asset_data["dateModified"])
-            - obj.bynder_last_modified
-        )
-        self.stdout.write(f"{repr(obj)} is behind by: {time_diff}")
+        if obj.bynder_last_modified:
+            time_diff = (
+                datetime.fromisoformat(asset_data["dateModified"])
+                - obj.bynder_last_modified
+            )
+            self.stdout.write(f"{repr(obj)} is behind by: {time_diff}")
         self.stdout.write("The latest data from Bynder is:")
         for key, value in asset_data.items():
             self.stdout.write(f"  {key}: {value}")
