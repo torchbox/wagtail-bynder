@@ -56,35 +56,13 @@ class BynderAssetMixin(models.Model):
     is_public = models.BooleanField(
         verbose_name=_("asset is marked as public"), default=False
     )
-    metadata = models.JSONField(
-        verbose_name=_("additional metadata"),
-        default=dict,
-        encoder=DjangoJSONEncoder,
-        blank=True,
-    )
 
     extra_admin_form_fields = (
         "description",
         "copyright",
-        "metadata",
         "is_archived",
         "is_limited_use",
         "is_public",
-    )
-
-    directly_mapped_bynder_fields = (
-        "id",
-        "name",
-        "copyright",
-        "description",
-        "idHash",
-        "dateModified",
-        "archive",
-        "limited",
-        "isPublic",
-        "extension",
-        "original",
-        "type",
     )
 
     extra_search_fields = [
@@ -124,17 +102,12 @@ class BynderAssetMixin(models.Model):
         self.collection = self.get_target_collection(asset_data)
         self.bynder_id_hash = asset_data["idHash"]
         self.bynder_last_modified = asset_data["dateModified"]
-        self.metadata = self.extract_relevant_metadata(asset_data)
         self.is_archived = bool(asset_data.get("archive", 0))
         self.is_limited_use = bool(asset_data.get("limited", 0))
         self.is_public = bool(asset_data.get("isPublic", 0))
 
     def get_target_collection(self, asset_data: dict[str, Any]) -> Collection:
         return utils.get_default_collection()
-
-    def extract_relevant_metadata(self, asset_data: dict[str, Any]) -> dict[str, Any]:
-        directly_mapped = set(self.directly_mapped_bynder_fields)
-        return {k: v for k, v in asset_data.items() if k not in directly_mapped}
 
 
 class BynderAssetWithFileMixin(BynderAssetMixin):
@@ -165,9 +138,6 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
         Image.admin_form_fields + BynderAssetMixin.extra_admin_form_fields
     )
 
-    directly_mapped_bynder_fields = BynderAssetMixin.directly_mapped_bynder_fields + (
-        "activeOriginalFocusPoint",
-    )
 
     search_fields = (
         AbstractImage.search_fields + BynderAssetWithFileMixin.extra_search_fields
