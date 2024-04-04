@@ -1,6 +1,5 @@
 import logging
 import math
-import os
 
 from datetime import datetime
 from mimetypes import guess_type
@@ -124,18 +123,31 @@ class BynderAssetWithFileMixin(BynderAssetMixin):
     class Meta:
         abstract = True
 
+    @staticmethod
+    def extract_file_source(asset_data: dict[str, Any]) -> str:
+        raise NotImplementedError
+
     def update_from_asset_data(self, asset_data: dict[str, Any]) -> None:
         super().update_from_asset_data(asset_data)
-        if self.asset_file_has_changed(asset_data):
-            self.bynder_original_filename = os.path.basename(asset_data["original"])
-            self.file = self.download_asset_file(asset_data)
+        if not self.file or self.asset_file_has_changed(asset_data):
+            self.update_file(asset_data)
 
     def asset_file_has_changed(self, asset_data: dict[str, Any]) -> bool:
-        filename = os.path.basename(asset_data["original"])
-        return self.bynder_original_filename != filename
+        source_url = self.extract_file_source(asset_data)
+        filename = utils.filename_from_url(source_url)
+        return (
+            self.source_filename != filename
+            or self.original_filesize is None
+            or self.original_filesize != int(asset_data["fileSize"])
+        )
 
-    def download_asset_file(self, asset_data: dict[str, Any]) -> utils.DownloadedFile:
-        raise NotImplementedError
+    def update_file(self, asset_data: dict[str, Any]) -> None:
+        source_url = self.extract_file_source(asset_data)
+        self.file = utils.download_asset(source_url)
+
+        # Update supplementary field values
+        self.source_filename = utils.filename_from_url(source_url)
+        self.original_filesize = int(asset_data["fileSize"])
 
 
 class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
@@ -174,6 +186,18 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
                 int(asset_data["width"]),
             )
 
+    def asset_file_has_changed(self, asset_data: dict[str, Any]) -> bool:
+        return (
+            super().asset_file_has_changed(asset_data)
+            or (self.original_height or 0) != int(asset_data["height"])
+            or (self.original_width or 0) != int(asset_data["width"])
+        )
+
+    def update_file(self, asset_data: dict[str, Any]) -> None:
+        self.original_width = int(asset_data["width"])
+        self.original_height = int(asset_data["height"])
+        return super().update_file(asset_data)
+
     def set_focal_area_from_focus_point(
         self, x: int, y: int, original_height: int, original_width: int
     ) -> None:
@@ -203,22 +227,22 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
         # For the height, span outwards until we hit the top or bottom bounds
         self.focal_point_height = min(y, self.height - y) * 2
 
-    def download_asset_file(self, asset_data: dict[str, Any]) -> utils.DownloadedFile:
-        # Use the thumbnail specified in settings as the source image for
-        # Wagtail. NOTE: This should still be a high quality image. We just
-        # don't need a print quality original to generate renditions from.
+    @staticmethod
+    def extract_file_source(asset_data: dict[str, Any]) -> str:
+        # For images, we store and use the source derivative filename,
+        # because the 'original' isn't always present
+        asset_id = asset_data["id"]
         key = getattr(settings, "BYNDER_IMAGE_SOURCE_THUMBNAIL_NAME", "webimage")
         thumbnails = asset_data["thumbnails"]
         try:
-            source_url = thumbnails[key]
+            return thumbnails[key]
         except KeyError as e:
             raise ImproperlyConfigured(
-                f"The '{key}' derivative is missing from 'thumbnails' for image asset '{self.bynder_id}'. "
+                f"The '{key}' derivative is missing from 'thumbnails' for image asset '{asset_id}'. "
                 "You might need to update the 'BYNDER_IMAGE_SOURCE_THUMBNAIL_NAME' setting value to reflect "
-                "derivative names used in your Bynder instance. The available derivative for this asset "
-                f"are: {thumbnails.keys()}"
+                "derivative names used in your Bynder instance. The available derivatives for this asset "
+                f"are: {list(thumbnails.keys())}"
             ) from e
-        return utils.download_image(source_url)
 
 
 class BynderSyncedDocument(BynderAssetWithFileMixin, AbstractDocument):
@@ -233,8 +257,17 @@ class BynderSyncedDocument(BynderAssetWithFileMixin, AbstractDocument):
     class Meta:
         abstract = True
 
-    def download_asset_file(self, asset_data: dict[str, Any]) -> utils.DownloadedFile:
-        return utils.download_document(asset_data["original"])
+    @staticmethod
+    def extract_file_source(asset_data: dict[str, Any]) -> str:
+        asset_id = asset_data["id"]
+        try:
+            return asset_data["original"]
+        except KeyError as e:
+            raise KeyError(
+                f"'original' is missing from the API representation for document asset '{asset_id}'. "
+                "This is likely because the asset is marked as 'private' in Bynder. Wagtail needs the "
+                "'original' asset URL in order to download and save its own copy."
+            ) from e
 
 
 class BynderSyncedVideo(
@@ -296,7 +329,14 @@ class BynderSyncedVideo(
                 FieldPanel("is_public", read_only=True),
             ],
         ),
-        FieldPanel("metadata", read_only=True),
+        MultiFieldPanel(
+            heading=_("Further information"),
+            children=[
+                FieldPanel("original_filesize", read_only=True),
+                FieldPanel("original_height", read_only=True),
+                FieldPanel("original_width", read_only=True),
+            ],
+        ),
     ]
 
     class Meta:
@@ -344,6 +384,8 @@ class BynderSyncedVideo(
                 "names set by Bynder for your instance. The available derivatives for this "
                 f"asset are: {derivatives}"
             ) from None
+        else:
+            self.source_filename = utils.filename_from_url(self.primary_source_url)
 
         self.fallback_source_url = derivatives.get(fallback_derivative_name)
 
@@ -358,3 +400,7 @@ class BynderSyncedVideo(
                 "derivative names set by Bynder for you instance. The available derivative names "
                 f"for this asset are: {thumbnails.keys()}"
             ) from e
+
+        self.original_filesize = int(asset_data["fileSize"])
+        self.original_width = int(asset_data["width"])
+        self.original_height = int(asset_data["height"])

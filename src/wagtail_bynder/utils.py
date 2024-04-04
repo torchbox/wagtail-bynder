@@ -57,6 +57,10 @@ def download_image(url: str) -> InMemoryUploadedFile:
     return uploadedfile
 
 
+def filename_from_url(url: str) -> str:
+    return os.path.basename(url)
+
+
 def get_bynder_client() -> BynderClient:
     return BynderClient(
         domain=getattr(settings, "BYNDER_DOMAIN", ""),
