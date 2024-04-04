@@ -145,6 +145,9 @@ class BynderAssetWithFileMixin(BynderAssetMixin):
         source_url = self.extract_file_source(asset_data)
         self.file = utils.download_asset(source_url)
 
+        # Used to trigger additional updates on save()
+        self._file_changed = True
+
         # Update supplementary field values
         self.source_filename = utils.filename_from_url(source_url)
         self.original_filesize = int(asset_data["fileSize"])
@@ -168,6 +171,11 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
 
     class Meta:
         abstract = True
+
+    def save(self, *args, **kwargs):
+        if getattr(self, "_file_changed", False):
+            self._set_image_file_metadata()
+        super().save(*args, **kwargs)
 
     def update_from_asset_data(
         self,
@@ -256,6 +264,11 @@ class BynderSyncedDocument(BynderAssetWithFileMixin, AbstractDocument):
 
     class Meta:
         abstract = True
+
+    def save(self, *args, **kwargs):
+        if getattr(self, "_file_changed", False):
+            self._set_document_file_metadata()
+        super().save(*args, **kwargs)
 
     @staticmethod
     def extract_file_source(asset_data: dict[str, Any]) -> str:
