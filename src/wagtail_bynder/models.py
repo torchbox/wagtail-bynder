@@ -167,7 +167,7 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
         AbstractImage.search_fields + BynderAssetWithFileMixin.extra_search_fields
     )
 
-    class Meta:
+    class Meta(AbstractImage.Meta):
         abstract = True
 
     def save(self, *args, **kwargs):
@@ -260,7 +260,7 @@ class BynderSyncedDocument(BynderAssetWithFileMixin, AbstractDocument):
         AbstractDocument.search_fields + BynderAssetWithFileMixin.extra_search_fields
     )
 
-    class Meta:
+    class Meta(AbstractDocument.Meta):
         abstract = True
 
     def save(self, *args, **kwargs):
