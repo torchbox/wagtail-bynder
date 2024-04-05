@@ -33,6 +33,7 @@ class BynderAssetMixin(models.Model):
         unique=True,
         editable=False,
         db_index=True,
+        null=True,
     )
     bynder_id_hash = models.CharField(max_length=100, blank=True, editable=False)
     bynder_original_filename = models.CharField(
