@@ -7,6 +7,7 @@ from django.db.models.base import ModelBase
 from django.db.models.query import Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from requests import HTTPError
 
 from wagtail_bynder.models import BynderAssetMixin
 from wagtail_bynder.utils import get_bynder_client
@@ -16,13 +17,16 @@ if TYPE_CHECKING:
     from django.db.models.query import QuerySet
 
 
-class BaseBynderSyncCommand(BaseCommand):
-    bynder_asset_type: str = ""
-    page_size: int = 200
+class BaseModelCommand(BaseCommand):
     model: ModelBase | None = None
 
     def get_queryset(self) -> "QuerySet":
         return self.model.objects.all()  # type: ignore[attr-defined]
+
+
+class BaseBynderSyncCommand(BaseModelCommand):
+    bynder_asset_type: str = ""
+    page_size: int = 200
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -161,4 +165,84 @@ class BaseBynderSyncCommand(BaseCommand):
         self.stdout.write("-" * 80)
 
         obj.update_from_asset_data(asset_data)
+        obj.save()
+
+
+class BaseBynderRefreshCommand(BaseModelCommand):
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--from",
+            type=int,
+            help=_(
+                "Only update items with a 'pk' value greater than or equal to this value."
+            ),
+        )
+        parser.add_argument(
+            "--force-download",
+            action="store_true",
+            help=_(
+                "Force redownloading and updating of files, regardless of whether they have changed."
+            ),
+        )
+        parser.add_argument(
+            "--delete-not-recognised",
+            action="store_true",
+            help=_(
+                "Delete objects local objects with a 'bynder_id' that is no longer recognised by Bynder"
+            ),
+        )
+
+    def handle(self, *args, **options):
+        self.batch_count = 0
+        self.bynder_client = get_bynder_client()
+        self.force_download = options["force_download"]
+        self.from_pk = options["from"]
+        self.delete_not_recognised = options["delete_not_recognised"]
+        unrecognised_asset_ids = []
+
+        for obj in self.get_queryset():
+            try:
+                asset_data = self.bynder_client.asset_bank_client.media_info(
+                    obj.bynder_id
+                )
+            except HTTPError as e:
+                if e.response.status_code == 404:
+                    self.stdout.write(
+                        f"Asset ID '{obj.bynder_id}' was not recognized by Bynder\n"
+                    )
+                    unrecognised_asset_ids.append(obj.bynder_id)
+                    continue
+                else:
+                    raise e
+            else:
+                self.stdout.write(
+                    f"Asset with ID '{asset_data['id']}' was fetched successfully\n"
+                )
+                self.update_object(obj, asset_data)
+
+        self.stdout.write(
+            f"During this run, {len(unrecognised_asset_ids)} asset ids where not recognised by Bynder"
+        )
+        if unrecognised_asset_ids:
+            self.stdout.write("\n".join(unrecognised_asset_ids))
+            if self.delete_not_recognised:
+                for obj in self.get_queryset().filter(
+                    bynder_id__in=unrecognised_asset_ids
+                ):
+                    obj.delete()
+                self.stdout.write(
+                    f"Any local {self.model._meta.label} objects using these IDs have been deleted."  # type: ignore[attr-defined]
+                )
+
+    def get_queryset(self) -> "QuerySet":
+        queryset = super().get_queryset().exclude(bynder_id__isnull=True).order_by("pk")
+        if self.from_pk:
+            return queryset.filter(pk__gte=self.from_pk)
+        return queryset
+
+    def update_object(self, obj: BynderAssetMixin, asset_data: dict[str, Any]) -> None:
+        self.stdout.write(
+            f"Updating <{self.model._meta.label}: pk='{obj.pk}' title='{obj.title}'>"  # type: ignore[attr-defined]
+        )
+        obj.update_from_asset_data(asset_data, force_download=self.force_download)
         obj.save()
