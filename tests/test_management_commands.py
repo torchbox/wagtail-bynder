@@ -7,8 +7,18 @@ from unittest import mock
 from django.core.management import call_command
 from django.test import SimpleTestCase, TestCase
 from freezegun import freeze_time
+from requests import HTTPError, Response
 from testapp.factories import CustomDocumentFactory, CustomImageFactory, VideoFactory
 
+from wagtail_bynder.management.commands.update_all_documents import (
+    Command as UpdateDocuments,
+)
+from wagtail_bynder.management.commands.update_all_images import (
+    Command as UpdateImages,
+)
+from wagtail_bynder.management.commands.update_all_videos import (
+    Command as UpdateVideos,
+)
 from wagtail_bynder.management.commands.update_stale_documents import (
     Command as UpdateStaleDocuments,
 )
@@ -201,6 +211,192 @@ class SyncCommandTestsMixin:
             expected_datemodified,
             expected_timespan_description,
         )
+
+
+class RefreshCommandTestsMixin:
+    """
+    A mixin class for testing 'update_all_images', 'update_all_documents' and
+    'update_all_videos' commands, which uses mocking to patch out interactions
+    with the Bynder API and the database.
+    """
+
+    command_name: str = ""
+    command_class: Type
+    factory_class: Type
+
+    @classmethod
+    def setUpClass(cls):
+        cls.model_class = cls.command_class.model
+        cls.deleted_msg = f"Any local {cls.model_class._meta.label} objects using these IDs have been deleted."
+        super().setUpClass()
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.asset_one = cls.factory_class(
+            title="Test asset",
+            bynder_id=TEST_ASSET_ID,
+            collection_id=1,
+        )
+        cls.asset_two = cls.factory_class(
+            title="Non-bynder test asset",
+            bynder_id="0",
+            collection_id=1,
+        )
+
+    def setUp(self):
+        # Define a mock to stand-in for the Bynder API client
+        self.mock_api_client = mock.Mock()
+
+        def media_info_side_effect(arg):
+            if arg == TEST_ASSET_ID:
+                return TEST_ASSET_DATA
+
+            resp = Response()
+            resp.raw = ""
+            resp.status_code = 404
+            raise HTTPError(response=resp)
+
+        # Patch 'media_info' to use the above side-effect function
+        self.mock_api_client.asset_bank_client.media_info.side_effect = (
+            media_info_side_effect
+        )
+
+    def call_command(self, *args, **kwargs):
+        """
+        Calls the command with the provided arguments, whilst also also mocking
+        out the Bynder API client and `get_stale_objects` method, so that we
+        can test the command in isolation and check that interactions happen as
+        expected.
+        """
+        out = StringIO()
+
+        with (
+            # Patch the Bynder client
+            mock.patch(
+                "wagtail_bynder.management.commands.base.get_bynder_client",
+                return_value=self.mock_api_client,
+            ),
+            # Patch the model class's update_from_asset_data() method
+            mock.patch(
+                f"{self.model_class.__module__}.{self.model_class.__name__}.update_from_asset_data"
+            ) as update_from_asset_data_mock,
+            # Patch the model class's save() method
+            mock.patch(
+                f"{self.model_class.__module__}.{self.model_class.__name__}.save"
+            ) as save_mock,
+        ):
+            call_command(
+                self.command_name,
+                *args,
+                stdout=out,
+                stderr=StringIO(),
+                **kwargs,
+            )
+        return out.getvalue(), update_from_asset_data_mock, save_mock
+
+    def test_default(self):
+        output, update_from_asset_data_mock, save_mock = self.call_command()
+
+        self.mock_api_client.asset_bank_client.media_info.assert_has_calls(
+            [
+                mock.call(self.asset_one.bynder_id),
+                mock.call(self.asset_two.bynder_id),
+            ]
+        )
+
+        update_from_asset_data_mock.assert_called_once_with(
+            TEST_ASSET_DATA, force_download=False
+        )
+
+        save_mock.assert_called_once()
+
+        self.assertIn(
+            f"Asset with ID '{TEST_ASSET_ID}' was fetched successfully",
+            output,
+        )
+
+        # The object with the unrecognised 'bynder_id' value should have been flagged
+        self.assertIn(
+            "Asset ID '0' was not recognized by Bynder",
+            output,
+        )
+        self.assertIn(
+            "During this run, 1 asset ids where not recognised by Bynder", output
+        )
+
+        # BUT not deleted
+        self.assertNotIn(self.deleted_msg, output)
+        self.assertEqual(self.model_class.objects.all().count(), 2)
+
+    def test_delete(self):
+        output = self.call_command(delete_not_recognised=True)[0]
+
+        # The object with the unrecognised 'bynder_id' value should have flagged
+        self.assertIn(
+            "Asset ID '0' was not recognized by Bynder",
+            output,
+        )
+        self.assertIn(
+            "During this run, 1 asset ids where not recognised by Bynder", output
+        )
+
+        # AND deleted
+        self.assertIn(self.deleted_msg, output)
+        self.assertEqual(self.model_class.objects.all().count(), 1)
+
+    def test_from(self):
+        output, update_from_asset_data_mock, save_mock = self.call_command(
+            **{"from": self.asset_two.pk}
+        )
+
+        self.mock_api_client.asset_bank_client.media_info.assert_called_once_with(
+            self.asset_two.bynder_id
+        )
+
+        update_from_asset_data_mock.assert_not_called()
+
+        save_mock.assert_not_called()
+
+    def test_force_download(self):
+        output, update_from_asset_data_mock, save_mock = self.call_command(
+            force_download=True
+        )
+
+        update_from_asset_data_mock.assert_called_once_with(
+            TEST_ASSET_DATA, force_download=True
+        )
+
+        save_mock.assert_called_once()
+
+
+class UpdateDocumentsTestCase(RefreshCommandTestsMixin, TestCase):
+    """
+    Unit tests for the 'update_all_documents' management command.
+    """
+
+    command_name = "update_all_documents"
+    command_class = UpdateDocuments
+    factory_class = CustomDocumentFactory
+
+
+class UpdateImagesTestCase(RefreshCommandTestsMixin, TestCase):
+    """
+    Unit tests for the 'update_all_images' management command.
+    """
+
+    command_name = "update_all_images"
+    command_class = UpdateImages
+    factory_class = CustomImageFactory
+
+
+class UpdateVideosTestCase(RefreshCommandTestsMixin, TestCase):
+    """
+    Unit tests for the 'update_all_videos' management command.
+    """
+
+    command_name = "update_all_videos"
+    command_class = UpdateVideos
+    factory_class = VideoFactory
 
 
 class UpdateStaleImagesTestCase(SyncCommandTestsMixin, SimpleTestCase):
