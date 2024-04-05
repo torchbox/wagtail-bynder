@@ -1,17 +1,26 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
+from django.utils.translation import gettext_lazy as _
 from wagtail.images import get_image_model
-from wagtail.images.models import AbstractImage
 
 from .base import BaseBynderSyncCommand
 
 
+if TYPE_CHECKING:
+    from wagtail_bynder.models import BynderAssetMixin
+
+
 class Command(BaseBynderSyncCommand):
+    help = _(
+        "Update stale Wagtail image library items to reflect recent asset updates in Bynder."
+    )
     model = get_image_model()
     bynder_asset_type: str = "image"
     page_size: int = 200
 
-    def update_object(self, obj: AbstractImage, asset_data: dict[str, Any]) -> None:
+    def update_object(
+        self, obj: "BynderAssetMixin", asset_data: dict[str, Any]
+    ) -> None:
         """
         Overrides `BaseBynderSyncCommand.update_object()` to fetch the
         complete asset details before handing off to `obj.update_from_asset_data()`.
