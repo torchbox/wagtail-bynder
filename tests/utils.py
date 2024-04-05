@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from django.utils.text import slugify
+
 
 TEST_ASSET_ID = "1A7BA172-97B9-44A4-8C0AA41D9E8AE6A2"
 
@@ -7,18 +9,46 @@ TEST_ASSET_ID = "1A7BA172-97B9-44A4-8C0AA41D9E8AE6A2"
 def get_test_asset_data(
     id: str = TEST_ASSET_ID,
     name: str = "Test asset",
+    type: str = "image",
+    description: str = "",
     copyright: str = "",
-    alt_text: str = "",
     date_modified: datetime | None = None,
 ):
     from django.conf import settings
+
+    id_hash = "3477c04a50a14650"
 
     if date_modified:
         date_modified_str = date_modified.isoformat()
     else:
         date_modified_str = "2023-10-10T09:52:05Z"
 
-    return {
+    name_slugified = slugify(name)
+
+    if type == "document":
+        extension = "pdf"
+        filename = name_slugified + ".pdf"
+    elif type == "video":
+        extension = "mpg"
+        filename = name_slugified + ".mpg"
+    else:
+        extension = "tif"
+        filename = name_slugified + ".tif"
+
+    thumb_base = f"https://{settings.BYNDER_DOMAIN}/m/{id_hash}"
+
+    thumbnails = {
+        "mini": f"{thumb_base}/mini-{name_slugified}.png",
+        "thul": f"{thumb_base}/thul-{name_slugified}.png",
+        "webimage": f"{thumb_base}/webimage-{name_slugified}.png",
+    }
+    if type == "image":
+        derivative_name = settings.BYNDER_IMAGE_SOURCE_THUMBNAIL_NAME
+        thumbnails[derivative_name] = (
+            f"{thumb_base}/{derivative_name}-{name_slugified}.jpg"
+        )
+
+    data = {
         "activeOriginalFocusPoint": {"x": 541, "y": 550},
         "archive": 0,
         "brandId": "04215F17-57D6-48FB-9D64DA196B6B1E33",
@@ -26,32 +56,33 @@ def get_test_asset_data(
         "dateCreated": "2023-09-26T12:42:21Z",
         "dateModified": date_modified_str,
         "datePublished": "2005-03-11T02:08:12Z",
-        "description": (
-            "Medieval iron battleaxe. This battleaxe has a triangular blade with a reinforced edge and eared socket. "
-            "The wooden handle has been added recently. This is part of a group of battleaxes and spears that were "
-            "found during building works at the north end of London Bridge in the 1920s. They may have been lost in "
-            "battle or thrown into the river by the victors in celebration."
-        ),
-        "property_Alt_text": alt_text,
+        "description": description,
         "ecsArchiveFiles": [],
-        "extension": ["tif"],
+        "extension": [extension],
         "fileSize": 18096064,
         "height": 2008,
         "id": id or TEST_ASSET_ID,
         "idHash": "3477c04a50a14650",
-        "isPublic": 0,
+        "isPublic": 1,
         "limited": 0,
         "name": name,
         "orientation": "landscape",
-        "original": f"https://{settings.BYNDER_DOMAIN}/m/3477c04a50a14650/original/Medieval-iron-battleaxe-11th-century.tif",
+        "original": f"{thumb_base}/original/{filename}",
         "property_Accession_Number": "A23339",
-        "thumbnails": {
-            "mini": f"https://{settings.BYNDER_DOMAIN}/m/3477c04a50a14650/mini-Medieval-iron-battleaxe-11th-century.png",
-            "thul": f"https://{settings.BYNDER_DOMAIN}/m/3477c04a50a14650/thul-Medieval-iron-battleaxe-11th-century.png",
-            "webimage": f"https://{settings.BYNDER_DOMAIN}/m/3477c04a50a14650/webimage-Medieval-iron-battleaxe-11th-century.png",
-        },
-        "type": "image",
+        "type": type,
         "userCreated": "Mr Test",
         "watermarked": 0,
         "width": 3000,
+        "thumbnails": thumbnails,
     }
+
+    if type == "video":
+        url_base = f"https://{settings.BYNDER_DOMAIN}/asset/{data['id'].lower()}"
+        primary_derivative = settings.BYNDER_VIDEO_PRIMARY_DERIVATIVE_NAME
+        fallback_derivative = settings.BYNDER_VIDEO_FALLBACK_DERIVATIVE_NAME
+        data["videoPreviewURLs"] = [
+            f"{url_base}/{primary_derivative}/{primary_derivative}-{name_slugified}.webm",
+            f"{url_base}/{fallback_derivative}/{fallback_derivative}-{name_slugified}.mp4",
+        ]
+
+    return data
