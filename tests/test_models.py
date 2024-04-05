@@ -1,0 +1,342 @@
+from unittest import mock
+
+from django.conf import settings
+from django.test import SimpleTestCase
+from wagtail.documents import get_document_model
+from wagtail.images import get_image_model
+
+from wagtail_bynder import get_video_model
+from wagtail_bynder.exceptions import BynderAssetDataError
+from wagtail_bynder.utils import filename_from_url
+
+from .utils import get_test_asset_data
+
+
+class BynderSyncedDocumentTests(SimpleTestCase):
+    def setUp(self):
+        model_class = get_document_model()
+        self.asset_data = get_test_asset_data(
+            name="My Groovy Document",
+            type="document",
+            id="7df5c640-af36-4502-84ca-c1e0005dd229",
+        )
+        self.obj = model_class(
+            title=self.asset_data["name"],
+            bynder_id=self.asset_data["id"],
+            source_filename=filename_from_url(self.asset_data["original"]),
+            original_filesize=self.asset_data["fileSize"],
+            collection_id=1,
+        )
+        super().setUp()
+
+    def test_extract_file_source(self):
+        # When 'original' is present, that should be used
+        self.assertIs(
+            self.obj.extract_file_source(self.asset_data), self.asset_data["original"]
+        )
+        # When it is not present, a special KeyError should be raised
+        asset_id = self.asset_data["id"]
+        del self.asset_data["original"]
+        with self.assertRaisesMessage(
+            BynderAssetDataError,
+            (
+                f"'original' is missing from the API representation for document asset '{asset_id}'. "
+                "This is likely because the asset is marked as 'private' in Bynder. Wagtail needs the "
+                "'original' asset URL in order to download and save its own copy."
+            ),
+        ):
+            self.obj.extract_file_source(self.asset_data)
+
+    def test_asset_file_has_changed(self):
+        # `self.obj` is initialized with values from the API representation,
+        # so no changes should be reported by default
+        self.assertFalse(self.obj.asset_file_has_changed(self.asset_data))
+        # That should change if a change in 'fileSize' is detected
+        data = self.asset_data.copy()
+        data["fileSize"] = 999
+        self.assertTrue(self.obj.asset_file_has_changed(data))
+        # OR if a change in filename is detected
+        data = self.asset_data.copy()
+        data["original"] = data["original"][:-5] + "foobar" + data["original"][-5:]
+        self.assertTrue(self.obj.asset_file_has_changed(data))
+
+    def test_update_file(self):
+        self.obj.source_filename = None
+        self.obj.original_filesize = None
+        self.assertFalse(hasattr(self.obj, "_file_changed"))
+
+        with mock.patch(
+            "wagtail_bynder.models.utils.download_asset", return_value=None
+        ):
+            self.obj.update_file(self.asset_data)
+
+        self.assertTrue(self.obj._file_changed)
+        self.assertEqual(
+            self.obj.source_filename, filename_from_url(self.asset_data["original"])
+        )
+        self.assertEqual(self.obj.original_filesize, self.asset_data["fileSize"])
+
+    def test_update_from_asset_data(self):
+        self.obj.title = None
+        self.obj.copyright = None
+        self.obj.description = None
+        self.obj.bynder_last_modified = None
+        self.obj.is_archived = None
+        self.obj.is_limited_use = None
+        self.obj.is_public = None
+
+        with (
+            mock.patch(
+                "wagtail_bynder.models.utils.get_default_collection", return_value=None
+            ),
+            mock.patch.object(self.obj, "update_file"),
+        ):
+            self.obj.update_from_asset_data(self.asset_data)
+        self.assertEqual(self.obj.title, self.asset_data["name"])
+        self.assertEqual(self.obj.copyright, self.asset_data["copyright"])
+        self.assertEqual(self.obj.description, self.asset_data["description"])
+        self.assertEqual(self.obj.bynder_last_modified, self.asset_data["dateModified"])
+        self.assertEqual(self.obj.is_archived, self.asset_data["archive"] == 1)
+        self.assertEqual(self.obj.is_limited_use, self.asset_data["limited"] == 1)
+        self.assertEqual(self.obj.is_public, self.asset_data["isPublic"] == 1)
+
+
+class BynderSyncedImageTests(SimpleTestCase):
+    def setUp(self):
+        model_class = get_image_model()
+        self.asset_data = get_test_asset_data(
+            name="My Groovy Image",
+            type="image",
+            id="5e1207a7-0a11-40bd-95c8-907b8233520a",
+        )
+        self.obj = model_class(
+            title=self.asset_data["name"],
+            bynder_id=self.asset_data["id"],
+            height=50,
+            width=50,
+            source_filename=filename_from_url(
+                self.asset_data["thumbnails"]["WagtailSource"]
+            ),
+            original_filesize=self.asset_data["fileSize"],
+            original_height=self.asset_data["height"],
+            original_width=self.asset_data["width"],
+            collection_id=1,
+        )
+        super().setUp()
+
+    def test_extract_file_source(self):
+        # For images, this method should extract the URL for the derivative
+        # named by the BYNDER_IMAGE_SOURCE_THUMBNAIL_NAME setting
+        derivative_name = settings.BYNDER_IMAGE_SOURCE_THUMBNAIL_NAME
+        self.assertIs(
+            self.obj.extract_file_source(self.asset_data),
+            self.asset_data["thumbnails"][derivative_name],
+        )
+        # When that derivative is not present, a special KeyError should be raised
+        asset_id = self.asset_data["id"]
+        self.asset_data["thumbnails"] = {}
+        with self.assertRaisesMessage(
+            BynderAssetDataError,
+            (
+                f"The '{derivative_name}' derivative is missing from 'thumbnails' for image asset '{asset_id}'. "
+                "You might need to update the 'BYNDER_IMAGE_SOURCE_THUMBNAIL_NAME' setting value to reflect "
+                "derivative names used in your Bynder instance. The available derivatives for this asset "
+                "are: []"
+            ),
+        ):
+            self.obj.extract_file_source(self.asset_data)
+
+    def test_asset_file_has_changed(self):
+        # `self.obj` is initialized with values from the API representation,
+        # so no changes should be reported by default
+        self.assertFalse(self.obj.asset_file_has_changed(self.asset_data))
+        # That should change if a change in 'fileSize' is detected
+        data = self.asset_data.copy()
+        data["fileSize"] = 999
+        self.assertTrue(self.obj.asset_file_has_changed(data))
+        # OR if a change in filename is detected
+        data = self.asset_data.copy()
+        thumb = data["thumbnails"]["WagtailSource"]
+        data["thumbnails"]["WagtailSource"] = thumb[:-5] + "foobar" + thumb[-5:]
+        self.assertTrue(self.obj.asset_file_has_changed(data))
+        # OR a change in width
+        data = self.asset_data.copy()
+        data["width"] += 1
+        self.assertTrue(self.obj.asset_file_has_changed(data))
+        # OR a change in height
+        data = self.asset_data.copy()
+        data["height"] += 1
+        self.assertTrue(self.obj.asset_file_has_changed(data))
+
+    def test_update_file(self):
+        self.obj.source_filename = None
+        self.obj.original_filesize = None
+        self.obj.original_height = None
+        self.obj.original_width = None
+        self.assertFalse(hasattr(self.obj, "_file_changed"))
+
+        with mock.patch(
+            "wagtail_bynder.models.utils.download_asset", return_value=None
+        ):
+            self.obj.update_file(self.asset_data)
+
+        self.assertTrue(self.obj._file_changed)
+        self.assertEqual(
+            self.obj.source_filename,
+            filename_from_url(self.asset_data["thumbnails"]["WagtailSource"]),
+        )
+        self.assertEqual(self.obj.original_filesize, self.asset_data["fileSize"])
+        self.assertEqual(self.obj.original_height, self.asset_data["height"])
+        self.assertEqual(self.obj.original_width, self.asset_data["width"])
+
+    def test_update_from_asset_data(self):
+        self.obj.title = None
+        self.obj.copyright = None
+        self.obj.description = None
+        self.obj.bynder_last_modified = None
+        self.obj.is_archived = None
+        self.obj.is_limited_use = None
+        self.obj.is_public = None
+
+        with (
+            mock.patch(
+                "wagtail_bynder.models.utils.get_default_collection", return_value=None
+            ),
+            mock.patch.object(self.obj, "update_file"),
+        ):
+            self.obj.update_from_asset_data(self.asset_data)
+
+        self.assertEqual(self.obj.title, self.asset_data["name"])
+        self.assertEqual(self.obj.copyright, self.asset_data["copyright"])
+        self.assertEqual(self.obj.description, self.asset_data["description"])
+        self.assertEqual(self.obj.bynder_last_modified, self.asset_data["dateModified"])
+        self.assertEqual(self.obj.is_archived, self.asset_data["archive"] == 1)
+        self.assertEqual(self.obj.is_limited_use, self.asset_data["limited"] == 1)
+        self.assertEqual(self.obj.is_public, self.asset_data["isPublic"] == 1)
+        self.assertEqual(self.obj.focal_point_x, 13)
+        self.assertEqual(self.obj.focal_point_y, 13)
+        self.assertEqual(self.obj.focal_point_height, 26)
+        self.assertEqual(self.obj.focal_point_width, 26)
+
+
+class BynderSyncedVideoTests(SimpleTestCase):
+    def setUp(self):
+        model_class = get_video_model()
+        self.asset_data = get_test_asset_data(
+            name="My Groovy Video",
+            type="video",
+            id="5bae2917-0ea4-45dc-9eeb-02a65d9ac0a2",
+        )
+        self.obj = model_class(
+            title=self.asset_data["name"],
+            bynder_id=self.asset_data["id"],
+            source_filename=filename_from_url(self.asset_data["videoPreviewURLs"][0]),
+            original_height=self.asset_data["height"],
+            original_width=self.asset_data["width"],
+            collection_id=1,
+        )
+        super().setUp()
+
+    def test_primary_source_mimetype(self):
+        # When 'primary_source_url' is set, the property should return a value appropriate to the URL
+        self.obj.primary_source_url = self.asset_data["videoPreviewURLs"][0]
+        self.assertEqual(self.obj.primary_source_mimetype, "video/webm")
+        # The cached_property decorator is used, which means the value
+        # is cached per instance, even if 'primary_source_url' changes
+        self.obj.primary_source_url = self.asset_data["videoPreviewURLs"][1]
+        self.assertEqual(self.obj.primary_source_mimetype, "video/webm")
+        # If we clear the cache and unset 'primary_source_url', we should get an empty string back
+        self.obj.__dict__.pop("primary_source_mimetype")
+        self.obj.primary_source_url = ""
+        self.assertEqual(self.obj.primary_source_mimetype, "")
+
+    def test_fallback_source_mimetype(self):
+        # When 'fallback_source_url' is set, the property should return a value appropriate to the URL
+        self.obj.fallback_source_url = self.asset_data["videoPreviewURLs"][1]
+        self.assertEqual(self.obj.fallback_source_mimetype, "video/mp4")
+        # The cached_property decorator is used, which means the value
+        # is cached per instance, even if 'primary_source_url' changes
+        self.obj.fallback_source_url = self.asset_data["videoPreviewURLs"][0]
+        self.assertEqual(self.obj.fallback_source_mimetype, "video/mp4")
+        # If we clear the cache and unset 'primary_source_url', we should get an empty string back
+        self.obj.__dict__.pop("fallback_source_mimetype")
+        self.obj.fallback_source_url = ""
+        self.assertEqual(self.obj.fallback_source_mimetype, "")
+
+    def test_update_from_asset_data(self):
+        self.obj.title = None
+        self.obj.copyright = None
+        self.obj.description = None
+        self.obj.bynder_last_modified = None
+        self.obj.is_archived = None
+        self.obj.is_limited_use = None
+        self.obj.is_public = None
+        self.obj.source_filename = None
+        self.obj.original_filesize = None
+        self.obj.original_height = None
+        self.obj.original_width = None
+
+        with mock.patch(
+            "wagtail_bynder.models.utils.get_default_collection", return_value=None
+        ):
+            self.obj.update_from_asset_data(self.asset_data)
+
+        self.assertEqual(self.obj.title, self.asset_data["name"])
+        self.assertEqual(self.obj.copyright, self.asset_data["copyright"])
+        self.assertEqual(self.obj.description, self.asset_data["description"])
+        self.assertEqual(self.obj.bynder_last_modified, self.asset_data["dateModified"])
+        self.assertEqual(self.obj.is_archived, self.asset_data["archive"] == 1)
+        self.assertEqual(self.obj.is_limited_use, self.asset_data["limited"] == 1)
+        self.assertEqual(self.obj.is_public, self.asset_data["isPublic"] == 1)
+        self.assertEqual(
+            self.obj.primary_source_url, self.asset_data["videoPreviewURLs"][0]
+        )
+        self.assertEqual(
+            self.obj.fallback_source_url, self.asset_data["videoPreviewURLs"][1]
+        )
+        self.assertEqual(
+            self.obj.poster_image_url, self.asset_data["thumbnails"]["webimage"]
+        )
+        self.assertEqual(
+            self.obj.source_filename,
+            filename_from_url(self.asset_data["videoPreviewURLs"][0]),
+        )
+        self.assertEqual(self.obj.original_filesize, self.asset_data["fileSize"])
+        self.assertEqual(self.obj.original_height, self.asset_data["height"])
+        self.assertEqual(self.obj.original_width, self.asset_data["width"])
+
+    def test_missing_primary_source(self):
+        del self.asset_data["videoPreviewURLs"][0]
+        with self.assertRaisesMessage(
+            BynderAssetDataError,
+            (
+                "'videoPreviewURLs' does not contain a URL matching the derivative name "
+                "'WebPrimary'. You might need to update the 'BYNDER_VIDEO_PRIMARY_DERIVATIVE_NAME' "
+                "setting value to reflect the derivative names set by Bynder for your instance. "
+                "The available derivatives for this asset are: ['WebFallback']"
+            ),
+        ):
+            self.obj.update_from_asset_data(self.asset_data)
+
+    def test_missing_fallback_source(self):
+        del self.asset_data["videoPreviewURLs"][1]
+        with mock.patch(
+            "wagtail_bynder.models.utils.get_default_collection", return_value=None
+        ):
+            self.obj.update_from_asset_data(self.asset_data)
+        self.assertIsNone(self.obj.fallback_source_url)
+
+    def test_missing_poster_image(self):
+        asset_id = self.asset_data["id"]
+        del self.asset_data["thumbnails"]["webimage"]
+        with self.assertRaisesMessage(
+            BynderAssetDataError,
+            (
+                "The 'webimage' derivative is missing from 'thumbnails' "  # noqa: S608
+                f"for video asset '{asset_id}'. You might need to update the "
+                "'BYNDER_VIDEO_POSTER_IMAGE_DERIVATIVE_NAME' setting value to "
+                "reflect the derivative names set by Bynder for you instance. "
+                "The available derivative names for this asset are: ['mini', 'thul']"
+            ),
+        ):
+            self.obj.update_from_asset_data(self.asset_data)
