@@ -6,7 +6,6 @@ from mimetypes import guess_type
 from typing import Any
 
 from django.conf import settings
-from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
@@ -17,6 +16,8 @@ from wagtail.models import Collection, CollectionMember
 from wagtail.search import index
 
 from wagtail_bynder import utils
+
+from .exceptions import BynderAssetDataError
 
 
 logger = logging.getLogger("wagtail.images")
@@ -243,7 +244,7 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
         try:
             return thumbnails[key]
         except KeyError as e:
-            raise ImproperlyConfigured(
+            raise BynderAssetDataError(
                 f"The '{key}' derivative is missing from 'thumbnails' for image asset '{asset_id}'. "
                 "You might need to update the 'BYNDER_IMAGE_SOURCE_THUMBNAIL_NAME' setting value to reflect "
                 "derivative names used in your Bynder instance. The available derivatives for this asset "
@@ -274,7 +275,7 @@ class BynderSyncedDocument(BynderAssetWithFileMixin, AbstractDocument):
         try:
             return asset_data["original"]
         except KeyError as e:
-            raise KeyError(
+            raise BynderAssetDataError(
                 f"'original' is missing from the API representation for document asset '{asset_id}'. "
                 "This is likely because the asset is marked as 'private' in Bynder. Wagtail needs the "
                 "'original' asset URL in order to download and save its own copy."
@@ -374,8 +375,6 @@ class BynderSyncedVideo(
         self,
         asset_data: dict[str, Any],
     ) -> None:
-        super().update_from_asset_data(asset_data)
-
         primary_derivative_name = getattr(
             settings, "BYNDER_VIDEO_PRIMARY_DERIVATIVE_NAME", "Web-Primary"
         )
@@ -389,14 +388,14 @@ class BynderSyncedVideo(
         derivatives = {v.split("/")[-2]: v for v in asset_data["videoPreviewURLs"]}
         try:
             self.primary_source_url = derivatives[primary_derivative_name]
-        except KeyError:
-            raise ImproperlyConfigured(
+        except KeyError as e:
+            raise BynderAssetDataError(
                 "'videoPreviewURLs' does not contain a URL matching the derivative name "
                 f"'{primary_derivative_name}'. You might need to update the "
                 "'BYNDER_VIDEO_PRIMARY_DERIVATIVE_NAME' setting value to reflect the derivative "
                 "names set by Bynder for your instance. The available derivatives for this "
-                f"asset are: {derivatives}"
-            ) from None
+                f"asset are: {list(derivatives.keys())}"
+            ) from e
         else:
             self.source_filename = utils.filename_from_url(self.primary_source_url)
 
@@ -406,14 +405,16 @@ class BynderSyncedVideo(
         try:
             self.poster_image_url = thumbnails[poster_image_derivative_name]
         except KeyError as e:
-            raise ImproperlyConfigured(
+            raise BynderAssetDataError(
                 f"The '{poster_image_derivative_name}' derivative is missing from 'thumbnails' for "
                 f"video asset '{self.bynder_id}'. You might need to update the "
                 "'BYNDER_VIDEO_POSTER_IMAGE_DERIVATIVE_NAME' setting value to reflect the "
                 "derivative names set by Bynder for you instance. The available derivative names "
-                f"for this asset are: {thumbnails.keys()}"
+                f"for this asset are: {list(thumbnails.keys())}"
             ) from e
 
         self.original_filesize = int(asset_data["fileSize"])
         self.original_width = int(asset_data["width"])
         self.original_height = int(asset_data["height"])
+
+        super().update_from_asset_data(asset_data)
