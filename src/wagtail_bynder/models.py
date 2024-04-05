@@ -352,6 +352,8 @@ class BynderSyncedVideo(
 
     class Meta:
         abstract = True
+        verbose_name = _("video")
+        verbose_name_plural = _("videos")
 
     def __str__(self):
         return self.title
