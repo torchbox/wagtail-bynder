@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+### Added
+
+- Added `source_filename` and `original_filesize` fields to all base models, and updated `update_from_asset_data()` to set them accordingly.
+- Added `original_height` and `original_width` fields to image and video base models, and updated `update_from_asset_data()` to set them accordingly.
+- Added "What to ask of Bynder" section to `README.md`.
+- Improved test coverage
+
+### Removed
+
+- Removed the `metadata` field from all base models, along with `directly_mapped_bynder_fields` attributes, and the `extract_relevant_metadata()` method used for setting the field value during an update.
+- Removed the `bynder_original_filename` field from all base models. This has now been succeeded by `source_filename`, which stores a value more relevant to each type. 
+- Removed the `bynder_id_hash` field from all base models.
+- Removed the `download_asset_file()` method from all base models. The responsibility for downloading assets now falls to the `update_file()` method (applies to image and document models only).
+
+### Changed
+
+- The `bynder_id` field on all base models now supports `null` values, allowing a mix of images/documents from different sources to be added to be saved.
+- Fixed an issue with `file_hash` and `file_size` fields not being set correctly when a model instance is created or updated to reflect Bynder asset data.
+- Updated `asset_file_has_changed()` implementations on all models to take into account values from new `source_filename`, `original_filesize`, `original_height` and `original_width` model fields.
+- Consistently raise `wagtail_bynder.exceptions.BynderAssetDataError` (instead of `django.core.exceptions.ImproperlyConfigured` or `KeyError`) when API representations from Bynder do not contain data required for the integration to work properly.
+- Changed the default `BYNDER_VIDEO_PRIMARY_DERIVATIVE_NAME` setting value from `"Web-Primary"` to `"WebPrimary"` to reflect new guidance in `README.md`.
+- Changed the default `BYNDER_VIDEO_FALLBACK_DERIVATIVE_NAME` setting value from `"Web-Fallback"` to `"WebFallback"` to reflect new guidance in `README.md`.
+- Changed the default `BYNDER_IMAGE_SOURCE_THUMBNAIL_NAME` setting value from `"webimage"` to `"WagtailSource"` to reflect new guidance in `README.md`.
+
 ## [0.2] - 2024-02-25
 
 ### Added
