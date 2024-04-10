@@ -244,9 +244,7 @@ and only needs to have basic read permissions.
 
 ### `BYNDER_IMAGE_SOURCE_THUMBNAIL_NAME`
 
-Example: `"WagtailSource"`
-
-Default: `"webimage"`
+Default: `"WagtailSource"`
 
 The name of the automatically generated derivative that should be downloaded and used as the `file` value for the
 representative Wagtail image (as it appears in `thumbnails` in the API representation).
@@ -263,11 +261,11 @@ Default: `None`
 
 ### `BYNDER_VIDEO_PRIMARY_DERIVATIVE_NAME`
 
-Default: `"Web-Primary"`
+Default: `"WebPrimary"`
 
 ### `BYNDER_VIDEO_FALLBACK_DERIVATIVE_NAME`
 
-Default: `"Web-Fallback"`
+Default: `"WebFallback"`
 
 ### `BYNDER_VIDEO_POSTER_IMAGE_DERIVATIVE_NAME`
 

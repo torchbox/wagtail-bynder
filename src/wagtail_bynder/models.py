@@ -239,7 +239,7 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
         # For images, we store and use the source derivative filename,
         # because the 'original' isn't always present
         asset_id = asset_data["id"]
-        key = getattr(settings, "BYNDER_IMAGE_SOURCE_THUMBNAIL_NAME", "webimage")
+        key = getattr(settings, "BYNDER_IMAGE_SOURCE_THUMBNAIL_NAME", "WagtailSource")
         thumbnails = asset_data["thumbnails"]
         try:
             return thumbnails[key]
@@ -376,10 +376,10 @@ class BynderSyncedVideo(
         asset_data: dict[str, Any],
     ) -> None:
         primary_derivative_name = getattr(
-            settings, "BYNDER_VIDEO_PRIMARY_DERIVATIVE_NAME", "Web-Primary"
+            settings, "BYNDER_VIDEO_PRIMARY_DERIVATIVE_NAME", "WebPrimary"
         )
         fallback_derivative_name = getattr(
-            settings, "BYNDER_VIDEO_FALLBACK_DERIVATIVE_NAME", "Web-Fallback"
+            settings, "BYNDER_VIDEO_FALLBACK_DERIVATIVE_NAME", "WebFallback"
         )
         poster_image_derivative_name = getattr(
             settings, "BYNDER_VIDEO_POSTER_IMAGE_DERIVATIVE_NAME", "webimage"
