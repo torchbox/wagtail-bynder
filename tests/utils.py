@@ -44,9 +44,9 @@ def get_test_asset_data(
     }
     if type == "image":
         derivative_name = settings.BYNDER_IMAGE_SOURCE_THUMBNAIL_NAME
-        thumbnails[derivative_name] = (
-            f"{thumb_base}/{derivative_name}-{name_slugified}.jpg"
-        )
+        thumbnails[
+            derivative_name
+        ] = f"{thumb_base}/{derivative_name}-{name_slugified}.jpg"
 
     data = {
         "activeOriginalFocusPoint": {"x": 541, "y": 550},

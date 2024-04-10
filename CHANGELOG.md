@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - Removed the `metadata` field from all base models, along with `directly_mapped_bynder_fields` attributes, and the `extract_relevant_metadata()` method used for setting the field value during an update.
-- Removed the `bynder_original_filename` field from all base models. This has now been succeeded by `source_filename`, which stores a value more relevant to each type. 
+- Removed the `bynder_original_filename` field from all base models. This has now been succeeded by `source_filename`, which stores a value more relevant to each type.
 - Removed the `bynder_id_hash` field from all base models.
 - Removed the `download_asset_file()` method from all base models. The responsibility for downloading assets now falls to the `update_file()` method (applies to image and document models only).
 
