@@ -10,13 +10,13 @@ from freezegun import freeze_time
 from requests import HTTPError, Response
 from testapp.factories import CustomDocumentFactory, CustomImageFactory, VideoFactory
 
-from wagtail_bynder.management.commands.update_all_documents import (
+from wagtail_bynder.management.commands.refresh_bynder_documents import (
     Command as UpdateDocuments,
 )
-from wagtail_bynder.management.commands.update_all_images import (
+from wagtail_bynder.management.commands.refresh_bynder_images import (
     Command as UpdateImages,
 )
-from wagtail_bynder.management.commands.update_all_videos import (
+from wagtail_bynder.management.commands.refresh_bynder_videos import (
     Command as UpdateVideos,
 )
 from wagtail_bynder.management.commands.update_stale_documents import (
@@ -215,8 +215,8 @@ class SyncCommandTestsMixin:
 
 class RefreshCommandTestsMixin:
     """
-    A mixin class for testing 'update_all_images', 'update_all_documents' and
-    'update_all_videos' commands, which uses mocking to patch out interactions
+    A mixin class for testing 'refresh_bynder_images', 'refresh_bynder_documents' and
+    'refresh_bynder_videos' commands, which uses mocking to patch out interactions
     with the Bynder API and the database.
     """
 
@@ -371,30 +371,30 @@ class RefreshCommandTestsMixin:
 
 class UpdateDocumentsTestCase(RefreshCommandTestsMixin, TestCase):
     """
-    Unit tests for the 'update_all_documents' management command.
+    Unit tests for the 'refresh_bynder_documents' management command.
     """
 
-    command_name = "update_all_documents"
+    command_name = "refresh_bynder_documents"
     command_class = UpdateDocuments
     factory_class = CustomDocumentFactory
 
 
 class UpdateImagesTestCase(RefreshCommandTestsMixin, TestCase):
     """
-    Unit tests for the 'update_all_images' management command.
+    Unit tests for the 'refresh_bynder_images' management command.
     """
 
-    command_name = "update_all_images"
+    command_name = "refresh_bynder_images"
     command_class = UpdateImages
     factory_class = CustomImageFactory
 
 
 class UpdateVideosTestCase(RefreshCommandTestsMixin, TestCase):
     """
-    Unit tests for the 'update_all_videos' management command.
+    Unit tests for the 'refresh_bynder_videos' management command.
     """
 
-    command_name = "update_all_videos"
+    command_name = "refresh_bynder_videos"
     command_class = UpdateVideos
     factory_class = VideoFactory
 
