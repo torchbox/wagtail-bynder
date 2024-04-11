@@ -17,9 +17,9 @@ _DEFAULT_COLLECTION = Local()
 
 class DownloadedFile(BytesIO):
     name: str
-    content_type: str
-    charset: str
     size: int
+    content_type: str | None
+    charset: str | None
 
 
 def download_file(url: str) -> DownloadedFile:
@@ -31,9 +31,9 @@ def download_file(url: str) -> DownloadedFile:
     return f
 
 
-def download_document(url: str) -> InMemoryUploadedFile:
+def download_asset(url: str) -> InMemoryUploadedFile:
     f = download_file(url)
-    uploadedfile = InMemoryUploadedFile(
+    return InMemoryUploadedFile(
         f,
         name=f.name,
         field_name="file",
@@ -41,20 +41,10 @@ def download_document(url: str) -> InMemoryUploadedFile:
         charset=f.charset,
         content_type=f.content_type,
     )
-    return uploadedfile
 
 
-def download_image(url: str) -> InMemoryUploadedFile:
-    f = download_file(url)
-    uploadedfile = InMemoryUploadedFile(
-        f,
-        name=f.name,
-        field_name="file",
-        size=f.size,
-        charset=f.charset,
-        content_type=f.content_type,
-    )
-    return uploadedfile
+def filename_from_url(url: str) -> str:
+    return os.path.basename(url)
 
 
 def get_bynder_client() -> BynderClient:
