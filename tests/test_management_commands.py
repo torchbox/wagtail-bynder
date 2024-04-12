@@ -227,7 +227,7 @@ class RefreshCommandTestsMixin:
     @classmethod
     def setUpClass(cls):
         cls.model_class = cls.command_class.model
-        cls.deleted_msg = f"Any local {cls.model_class._meta.label} objects using these IDs have been deleted."
+        cls.deleted_msg = f"All local {cls.model_class._meta.label} objects using these IDs have been deleted."
         super().setUpClass()
 
     @classmethod
@@ -321,7 +321,7 @@ class RefreshCommandTestsMixin:
             output,
         )
         self.assertIn(
-            "During this run, 1 asset ids where not recognised by Bynder", output
+            "During this run, 1 asset id(s) were not recognised by Bynder", output
         )
 
         # BUT not deleted
@@ -337,7 +337,7 @@ class RefreshCommandTestsMixin:
             output,
         )
         self.assertIn(
-            "During this run, 1 asset ids where not recognised by Bynder", output
+            "During this run, 1 asset id(s) were not recognised by Bynder", output
         )
 
         # AND deleted

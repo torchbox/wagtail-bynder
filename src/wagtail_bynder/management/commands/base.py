@@ -188,7 +188,7 @@ class BaseBynderRefreshCommand(BaseModelCommand):
             "--delete-not-recognised",
             action="store_true",
             help=_(
-                "Delete objects local objects with a 'bynder_id' that is no longer recognised by Bynder"
+                "Delete local objects with a 'bynder_id' that is no longer recognised by Bynder"
             ),
         )
 
@@ -221,7 +221,7 @@ class BaseBynderRefreshCommand(BaseModelCommand):
                 self.update_object(obj, asset_data)
 
         self.stdout.write(
-            f"During this run, {len(unrecognised_asset_ids)} asset ids where not recognised by Bynder"
+            f"During this run, {len(unrecognised_asset_ids)} asset id(s) were not recognised by Bynder"
         )
         if unrecognised_asset_ids:
             self.stdout.write("\n".join(unrecognised_asset_ids))
@@ -231,7 +231,7 @@ class BaseBynderRefreshCommand(BaseModelCommand):
                 ):
                     obj.delete()
                 self.stdout.write(
-                    f"Any local {self.model._meta.label} objects using these IDs have been deleted."  # type: ignore[attr-defined]
+                    f"All local {self.model._meta.label} objects using these IDs have been deleted."  # type: ignore[attr-defined]
                 )
 
     def get_queryset(self) -> "QuerySet":
