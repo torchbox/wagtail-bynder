@@ -7,12 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+## [0.3] - 2024-04-12
+
 ### Added
 
 - Added `source_filename` and `original_filesize` fields to all base models, and updated `update_from_asset_data()` to set them accordingly.
 - Added `original_height` and `original_width` fields to image and video base models, and updated `update_from_asset_data()` to set them accordingly.
-- Added "What to ask of Bynder" section to `README.md`.
+- Added "What to ask of Bynder" section to `README.md`. [#15](https://github.com/torchbox/wagtail-bynder/pull/15) @ababic
 - Improved test coverage
+- Management commands to refresh all local objects. [#18](https://github.com/torchbox/wagtail-bynder/pull/18) @ababic
+  They are `refresh_bynder_documents`, `refresh_bynder_images` and `refresh_bynder_videos`
 
 ### Removed
 
@@ -49,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Initial release
 
 
-[unreleased]: https://github.com/torchbox/wagtail-bynder/compare/v0.2 ...HEAD
-[0.1]: https://github.com/torchbox/wagtail-bynder/compare/v.0.1...v0.2
+[unreleased]: https://github.com/torchbox/wagtail-bynder/compare/v0.3 ...HEAD
+[0.3]: https://github.com/torchbox/wagtail-bynder/compare/v.0.2...v0.3
+[0.2]: https://github.com/torchbox/wagtail-bynder/compare/v.0.1...v0.2
 [0.1]: https://github.com/torchbox/wagtail-bynder/compare/769e7b...v0.1
