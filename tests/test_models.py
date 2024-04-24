@@ -238,7 +238,6 @@ class BynderSyncedImageTests(SimpleTestCase):
         ):
             self.obj.update_from_asset_data(self.asset_data)
 
-
         new_focal_point = self.obj.get_focal_point()
         self.assertNotEqual(new_focal_point, current_focal_point)
         self.assertTrue(self.obj._focal_point_changed)
@@ -261,10 +260,10 @@ class BynderSyncedImageTests(SimpleTestCase):
         ):
             self.obj.update_from_asset_data(self.asset_data)
 
-
         new_focal_point = self.obj.get_focal_point()
         self.assertEqual(new_focal_point, current_focal_point)
         self.assertFalse(self.obj._focal_point_changed)
+
 
 class BynderSyncedVideoTests(SimpleTestCase):
     def setUp(self):
