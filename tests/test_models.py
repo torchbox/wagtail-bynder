@@ -197,6 +197,7 @@ class BynderSyncedImageTests(SimpleTestCase):
         self.obj.is_archived = None
         self.obj.is_limited_use = None
         self.obj.is_public = None
+        self.assertIsNone(self.obj.get_focal_point())
 
         with (
             mock.patch(
@@ -217,6 +218,51 @@ class BynderSyncedImageTests(SimpleTestCase):
         self.assertEqual(self.obj.focal_point_y, 13)
         self.assertEqual(self.obj.focal_point_height, 26)
         self.assertEqual(self.obj.focal_point_width, 26)
+        self.assertTrue(self.obj._focal_point_changed)
+
+    def test_update_from_asset_data_with_focal_point_change(self):
+        # First, let's set the focal point values to something semi-realistic
+        self.obj.focal_point_x = 20
+        self.obj.focal_point_y = 20
+        self.obj.focal_point_height = 20
+        self.obj.focal_point_width = 20
+
+        current_focal_point = self.obj.get_focal_point()
+
+        # Calling update_from_asset_data() should result in a change to these values
+        with (
+            mock.patch(
+                "wagtail_bynder.models.utils.get_default_collection", return_value=None
+            ),
+            mock.patch.object(self.obj, "update_file"),
+        ):
+            self.obj.update_from_asset_data(self.asset_data)
+
+        new_focal_point = self.obj.get_focal_point()
+        self.assertNotEqual(new_focal_point, current_focal_point)
+        self.assertTrue(self.obj._focal_point_changed)
+
+    def test_update_from_asset_data_without_focal_point_change(self):
+        # Set the focal point values to reflect the typical test outcome
+        self.obj.focal_point_x = 13
+        self.obj.focal_point_y = 13
+        self.obj.focal_point_height = 26
+        self.obj.focal_point_width = 26
+
+        current_focal_point = self.obj.get_focal_point()
+
+        # Calling update_from_asset_data() should result in no change to these values
+        with (
+            mock.patch(
+                "wagtail_bynder.models.utils.get_default_collection", return_value=None
+            ),
+            mock.patch.object(self.obj, "update_file"),
+        ):
+            self.obj.update_from_asset_data(self.asset_data)
+
+        new_focal_point = self.obj.get_focal_point()
+        self.assertEqual(new_focal_point, current_focal_point)
+        self.assertFalse(self.obj._focal_point_changed)
 
 
 class BynderSyncedVideoTests(SimpleTestCase):
