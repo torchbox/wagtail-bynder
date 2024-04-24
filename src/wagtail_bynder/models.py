@@ -187,6 +187,14 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
     def save(self, *args, **kwargs):
         if getattr(self, "_file_changed", False):
             self._set_image_file_metadata()
+        if self.pk and (
+            getattr(self, "_file_changed", False)
+            or getattr(self, "_focal_point_changed", False)
+        ):
+            # wagtail.images.forms.BaseImageForm usually takes care of this when
+            # updating via the UI. But, if updating objects directly, we must
+            # delete stale renditions ourselves.
+            self.renditions.all().delete()
         super().save(*args, **kwargs)
 
     def update_from_asset_data(
@@ -203,6 +211,8 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
         )
 
         # Update the focal area if a focus point is set
+        current_focal_point = self.get_focal_point()
+        self._focal_point_changed = False
         focus_point = asset_data.get("activeOriginalFocusPoint")
         if focus_point:
             self.set_focal_area_from_focus_point(
@@ -210,6 +220,10 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
                 int(focus_point["y"]),
                 int(asset_data["height"]),
                 int(asset_data["width"]),
+            )
+            self._focal_point_changed = (
+                current_focal_point is None
+                or self.get_focal_point() != current_focal_point
             )
 
     def asset_file_has_changed(self, asset_data: dict[str, Any]) -> bool:
