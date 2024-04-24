@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("taggit", "0005_auto_20220424_2025"),
-        ("wagtailcore", "0091_remove_revision_submitted_for_moderation"),
+        ("wagtailcore", "0089_log_entry_data_json_null_to_object"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
