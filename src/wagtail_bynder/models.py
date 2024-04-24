@@ -95,10 +95,15 @@ class BynderAssetMixin(models.Model):
     def update_from_asset_data(
         self,
         asset_data: dict[str, Any],
+        **kwargs,
     ) -> None:
         """
         Update this object (without saving) to reflect values in `asset_data`,
         which is a representation of the related asset from the Bynder API.
+
+        NOTE: Although this base implementation does nothing with them currently,
+        for compatibility reasons, ``**kwargs`` should always be accepted by all
+        implementations of this method.
         """
         self.title = asset_data.get("name", self.title)
         self.copyright = asset_data.get("copyright", self.copyright)
@@ -126,9 +131,17 @@ class BynderAssetWithFileMixin(BynderAssetMixin):
     def extract_file_source(asset_data: dict[str, Any]) -> str:
         raise NotImplementedError
 
-    def update_from_asset_data(self, asset_data: dict[str, Any]) -> None:
-        super().update_from_asset_data(asset_data)
-        if not self.file or self.asset_file_has_changed(asset_data):
+    def update_from_asset_data(
+        self, asset_data: dict[str, Any], *, force_download: bool = False, **kwargs
+    ) -> None:
+        """
+        Overrides ``BynderAssetMixin.update_from_asset_data()`` to explicitly
+        handle the ``force_download`` option that can be provided by management
+        commands, and to initiate downloading of the source file when it has
+        changed in some way.
+        """
+        super().update_from_asset_data(asset_data, **kwargs)
+        if force_download or not self.file or self.asset_file_has_changed(asset_data):
             self.update_file(asset_data)
 
     def asset_file_has_changed(self, asset_data: dict[str, Any]) -> bool:
@@ -177,11 +190,17 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
         super().save(*args, **kwargs)
 
     def update_from_asset_data(
-        self,
-        asset_data: dict[str, Any],
+        self, asset_data: dict[str, Any], *, force_download: bool = False, **kwargs
     ) -> None:
+        """
+        Overrides ``BynderAssetWithFileMixin.update_from_asset_data()`` to
+        handle conversion of focal points to focal areas.
+        """
+
         # Update the file and other field values without saving the changes
-        super().update_from_asset_data(asset_data)
+        super().update_from_asset_data(
+            asset_data, force_download=force_download, **kwargs
+        )
 
         # Update the focal area if a focus point is set
         focus_point = asset_data.get("activeOriginalFocusPoint")
@@ -374,7 +393,13 @@ class BynderSyncedVideo(
     def update_from_asset_data(
         self,
         asset_data: dict[str, Any],
+        **kwargs,
     ) -> None:
+        """
+        Overrides ``BynderAssetMixin.update_from_asset_data()`` to handle
+        setting of video-specific field values.
+        """
+
         primary_derivative_name = getattr(
             settings, "BYNDER_VIDEO_PRIMARY_DERIVATIVE_NAME", "WebPrimary"
         )
@@ -417,4 +442,4 @@ class BynderSyncedVideo(
         self.original_width = int(asset_data["width"])
         self.original_height = int(asset_data["height"])
 
-        super().update_from_asset_data(asset_data)
+        super().update_from_asset_data(asset_data, **kwargs)
