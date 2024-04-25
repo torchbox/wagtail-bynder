@@ -242,7 +242,7 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
         self, x: int, y: int, original_height: int, original_width: int
     ) -> None:
         """
-        Using the provided center-point coordinates, generate a
+        Using the provided focus point coordinates, generate a
         2D focal area for the downloaded image.
         """
         if x < 0 or y < 0 or x > original_width or y > original_height:
@@ -261,11 +261,21 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
         self.focal_point_x = x
         self.focal_point_y = y
 
+        # Draw a rectangle around the centre point
         # For the width, span outwards until we hit the left or right bounds
-        self.focal_point_width = min(x, self.width - x) * 2
+        rect_width = min(x, self.width - x) * 2
+        # Restrict rectangle width to 40% of the image height
+        rect_width = min(rect_width, math.floor(self.width * 0.4))
 
         # For the height, span outwards until we hit the top or bottom bounds
-        self.focal_point_height = min(y, self.height - y) * 2
+        rect_height = min(y, self.height - y) * 2
+        # Restrict rectangle height to 40% of the image height
+        rect_height = min(rect_height, math.floor(self.height * 0.4))
+
+        # Use the shortest side to make a square
+        width = min(rect_width, rect_height)
+        self.focal_point_width = width
+        self.focal_point_height = width
 
     @staticmethod
     def extract_file_source(asset_data: dict[str, Any]) -> str:
