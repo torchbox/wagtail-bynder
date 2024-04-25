@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+## [0.4] - 2024-04-25
+
+### Changed
+
+- Dropped support for Wagtail < 5.2, Django < 4.2 - in line with currently maintained versions. @zerolab
+- Tidied up the tooling configuration and dependencies. @zerolab
+- Stale renditions are now deleted when file or focal area changes are detected. [#24](https://github.com/torchbox/wagtail-bynder/pull/24) @ababic
+- Improve conversion of focus points into focal areas [#26](https://github.com/torchbox/wagtail-bynder/pull/26) @ababic
+  Now the focal area is square at 40% the width/height of the image with a center in the focus point.
+
+### Fixed
+
+- Fix: `TypeError` when using new 'refresh' commands [#23](https://github.com/torchbox/wagtail-bynder/pull/23) @ababic
+
 ## [0.3] - 2024-04-12
 
 ### Added
@@ -53,7 +67,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Initial release
 
 
-[unreleased]: https://github.com/torchbox/wagtail-bynder/compare/v0.3 ...HEAD
+[unreleased]: https://github.com/torchbox/wagtail-bynder/compare/v0.4 ...HEAD
+[0.4]: https://github.com/torchbox/wagtail-bynder/compare/v.0.3...v0.4
 [0.3]: https://github.com/torchbox/wagtail-bynder/compare/v.0.2...v0.3
 [0.2]: https://github.com/torchbox/wagtail-bynder/compare/v.0.1...v0.2
 [0.1]: https://github.com/torchbox/wagtail-bynder/compare/769e7b...v0.1
