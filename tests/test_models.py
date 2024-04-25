@@ -216,8 +216,8 @@ class BynderSyncedImageTests(SimpleTestCase):
         self.assertEqual(self.obj.is_public, self.asset_data["isPublic"] == 1)
         self.assertEqual(self.obj.focal_point_x, 13)
         self.assertEqual(self.obj.focal_point_y, 13)
-        self.assertEqual(self.obj.focal_point_height, 26)
-        self.assertEqual(self.obj.focal_point_width, 26)
+        self.assertEqual(self.obj.focal_point_height, 20)
+        self.assertEqual(self.obj.focal_point_width, 20)
         self.assertTrue(self.obj._focal_point_changed)
 
     def test_update_from_asset_data_with_focal_point_change(self):
@@ -246,8 +246,8 @@ class BynderSyncedImageTests(SimpleTestCase):
         # Set the focal point values to reflect the typical test outcome
         self.obj.focal_point_x = 13
         self.obj.focal_point_y = 13
-        self.obj.focal_point_height = 26
-        self.obj.focal_point_width = 26
+        self.obj.focal_point_height = 20
+        self.obj.focal_point_width = 20
 
         current_focal_point = self.obj.get_focal_point()
 
