@@ -1,46 +1,66 @@
 import mimetypes
 import os
 
-from io import BytesIO
+from tempfile import NamedTemporaryFile
 
 import requests
 
 from asgiref.local import Local
 from bynder_sdk import BynderClient
 from django.conf import settings
-from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.core.files.uploadedfile import TemporaryUploadedFile
 from wagtail.models import Collection
 
 
 _DEFAULT_COLLECTION = Local()
 
 
-class DownloadedFile(BytesIO):
-    name: str
-    size: int
-    content_type: str | None
-    charset: str | None
+def download_file(url: str) -> TemporaryUploadedFile:
+    basename = os.path.basename(url)
+    name, ext = os.path.splitext(basename)
+    content_type, charset = mimetypes.guess_type(name)
 
+    # Download file contents to the server. 'delete=False' is used to prevent deletion
+    # during all of the reopening and closing that happens as part of setting a file field
+    # value and saving the changes.
 
-def download_file(url: str) -> DownloadedFile:
-    raw_bytes = requests.get(url, timeout=20).content
-    f = DownloadedFile(raw_bytes)
-    f.name = os.path.basename(url)
-    f.size = len(raw_bytes)
-    f.content_type, f.charset = mimetypes.guess_type(f.name)
+    # NOTE: SpooledTemporaryFile could be more performant for smaller files, but doesn't
+    # support the 'delete=False' option
+    with NamedTemporaryFile(
+        mode="w+b",
+        suffix=f"download{ext}",
+        dir=settings.FILE_UPLOAD_TEMP_DIR,
+        delete=False,
+    ) as tmp:
+        for chunk in requests.get(
+            url,
+            stream=True,
+            timeout=getattr(settings, "BYNDER_ASSET_DOWNLOAD_TIMEOUT", 20),
+        ).iter_content(
+            chunk_size=getattr(settings, "BYNDER_ASSET_DOWNLOAD_CHUNK_SIZE", 512)
+        ):
+            # Stream to filesystem in chunks to avoid memory spikes
+            tmp.write(chunk)
+            # Before closing, use the file pointer position to tell us the file size
+            file_size = tmp.tell()
+
+    # We want to treat the download as a 'user-uploaded file', so wrap the system file
+    # in one of Django's built-in 'file upload' classes. `TemporaryUploadedFile` uses a
+    # a `NamedTemporaryFile` instance natively underneath, so is a good fit for our needs
+    f = TemporaryUploadedFile(basename, content_type, file_size, charset)
+
+    # TemporaryUploadedFile defines it's own (empty) inner file, but we already have one
+    # to hand (with 'delete=False' applied!), so let's delete and replace that.
+    try:
+        # Trash unused file
+        os.unlink(f.file.name)
+    except FileNotFoundError:
+        pass
+    else:
+        # Replace with downloaded one
+        f.file = tmp
+
     return f
-
-
-def download_asset(url: str) -> InMemoryUploadedFile:
-    f = download_file(url)
-    return InMemoryUploadedFile(
-        f,
-        name=f.name,
-        field_name="file",
-        size=f.size,
-        charset=f.charset,
-        content_type=f.content_type,
-    )
 
 
 def filename_from_url(url: str) -> str:
