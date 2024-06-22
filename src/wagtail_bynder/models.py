@@ -6,6 +6,7 @@ from mimetypes import guess_type
 from typing import Any
 
 from django.conf import settings
+from django.core.files.base import File
 from django.db import models
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
@@ -155,7 +156,7 @@ class BynderAssetWithFileMixin(BynderAssetMixin):
 
     def update_file(self, asset_data: dict[str, Any]) -> None:
         source_url = self.extract_file_source(asset_data)
-        self.file = utils.download_asset(source_url)
+        self.file = self.get_asset_file(source_url)
 
         # Used to trigger additional updates on save()
         self._file_changed = True
@@ -163,6 +164,14 @@ class BynderAssetWithFileMixin(BynderAssetMixin):
         # Update supplementary field values
         self.source_filename = utils.filename_from_url(source_url)
         self.original_filesize = int(asset_data["fileSize"])
+
+    def get_asset_file(self, source_url: str, **kwargs) -> File:
+        """
+        Returns a ``File`` object that can be used for setting this
+        object's ``file`` field value. By default, it simply downloads the
+        file from ``source_url`` and returns it.
+        """
+        return utils.download_file(source_url)
 
 
 class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
