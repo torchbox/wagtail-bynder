@@ -7,6 +7,11 @@ from wagtail.images import get_image_model
 
 from wagtail_bynder import get_video_model
 from wagtail_bynder.exceptions import BynderAssetDataError
+from wagtail_bynder.models import (
+    BynderSyncedVideo,
+    BynderSyncedImage,
+    BynderSyncedDocument,
+)
 from wagtail_bynder.utils import filename_from_url
 
 from .utils import get_test_asset_data
@@ -14,7 +19,7 @@ from .utils import get_test_asset_data
 
 class BynderSyncedDocumentTests(SimpleTestCase):
     def setUp(self):
-        model_class = get_document_model()
+        model_class: type[BynderSyncedDocument] = get_document_model()  # type: ignore
         self.asset_data = get_test_asset_data(
             name="My Groovy Document",
             type="document",
@@ -65,9 +70,7 @@ class BynderSyncedDocumentTests(SimpleTestCase):
         self.obj.original_filesize = None
         self.assertFalse(hasattr(self.obj, "_file_changed"))
 
-        with mock.patch(
-            "wagtail_bynder.models.utils.download_asset", return_value=None
-        ):
+        with mock.patch("wagtail_bynder.models.utils.download_file", return_value=None):
             self.obj.update_file(self.asset_data)
 
         self.assertTrue(self.obj._file_changed)
@@ -103,7 +106,7 @@ class BynderSyncedDocumentTests(SimpleTestCase):
 
 class BynderSyncedImageTests(SimpleTestCase):
     def setUp(self):
-        model_class = get_image_model()
+        model_class: type[BynderSyncedImage] = get_image_model()
         self.asset_data = get_test_asset_data(
             name="My Groovy Image",
             type="image",
@@ -175,9 +178,7 @@ class BynderSyncedImageTests(SimpleTestCase):
         self.obj.original_width = None
         self.assertFalse(hasattr(self.obj, "_file_changed"))
 
-        with mock.patch(
-            "wagtail_bynder.models.utils.download_asset", return_value=None
-        ):
+        with mock.patch("wagtail_bynder.models.utils.download_file", return_value=None):
             self.obj.update_file(self.asset_data)
 
         self.assertTrue(self.obj._file_changed)
@@ -267,7 +268,7 @@ class BynderSyncedImageTests(SimpleTestCase):
 
 class BynderSyncedVideoTests(SimpleTestCase):
     def setUp(self):
-        model_class = get_video_model()
+        model_class: type[BynderSyncedVideo] = get_video_model()  # type: ignore
         self.asset_data = get_test_asset_data(
             name="My Groovy Video",
             type="video",
@@ -310,15 +311,15 @@ class BynderSyncedVideoTests(SimpleTestCase):
         self.assertEqual(self.obj.fallback_source_mimetype, "")
 
     def test_update_from_asset_data(self):
-        self.obj.title = None
-        self.obj.copyright = None
-        self.obj.description = None
+        self.obj.title = None  # type: ignore
+        self.obj.copyright = None  # type: ignore
+        self.obj.description = None  # type: ignore
         self.obj.bynder_last_modified = None
-        self.obj.is_archived = None
-        self.obj.is_limited_use = None
-        self.obj.is_public = None
-        self.obj.source_filename = None
-        self.obj.original_filesize = None
+        self.obj.is_archived = None  # type: ignore
+        self.obj.is_limited_use = None  # type: ignore
+        self.obj.is_public = None  # type: ignore
+        self.obj.source_filename = None  # type: ignore
+        self.obj.original_filesize = None  # type: ignore
         self.obj.original_height = None
         self.obj.original_width = None
 
