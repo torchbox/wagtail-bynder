@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+## [0.4.1] - 2024-07-02
+
+### Fixed
+
+- Allow `RedirectToBynderMixin` views to process post requests as normal when not redirecting to Bynder ([#28](https://github.com/torchbox/wagtail-bynder/pull/28)) @ababic
+
 ## [0.4] - 2024-04-25
 
 ### Changed
@@ -67,7 +73,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Initial release
 
 
-[unreleased]: https://github.com/torchbox/wagtail-bynder/compare/v0.4 ...HEAD
+[unreleased]: https://github.com/torchbox/wagtail-bynder/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/torchbox/wagtail-bynder/compare/v.0.4...v0.4.1
 [0.4]: https://github.com/torchbox/wagtail-bynder/compare/v.0.3...v0.4
 [0.3]: https://github.com/torchbox/wagtail-bynder/compare/v.0.2...v0.3
 [0.2]: https://github.com/torchbox/wagtail-bynder/compare/v.0.1...v0.2
