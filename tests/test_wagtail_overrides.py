@@ -80,6 +80,6 @@ class BaseTemplateOverrideTests(TestCase, WagtailTestUtils):
             html,
         )
         self.assertIn(
-            f'<script src="{ settings.STATIC_URL }bynder/js/compactview-v4.0.0.js">',
+            f'<script src="{ settings.STATIC_URL }bynder/js/compactview-v4.js">',
             html,
         )
