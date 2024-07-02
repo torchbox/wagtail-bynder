@@ -1,4 +1,6 @@
-from typing import TYPE_CHECKING
+import contextlib
+
+from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
 from django.db import IntegrityError
@@ -13,37 +15,48 @@ if TYPE_CHECKING:
 
 
 class BynderAssetCopyMixin:
-
     model = type[BynderAssetMixin]
 
+    def setup(self, *args, **kwargs):
+        super().setup(*args, **kwargs)
+        bynder_client = get_bynder_client()
+        self.asset_client = bynder_client.asset_bank_client
+
+    def build_object_from_data(self, asset_data: dict[str, Any]) -> BynderAssetMixin:
+        obj = self.model(bynder_id=asset_data["id"])
+        obj.update_from_asset_data(asset_data)
+        return obj
+
     def create_object(self, asset_id: str) -> BynderAssetMixin:
-        client = get_bynder_client()
-        obj: BynderAssetMixin = self.model(bynder_id=asset_id)
-        data = client.asset_bank_client.media_info(asset_id)
-        obj.update_from_asset_data(data)
+        data = self.asset_client.media_info(asset_id)
+        obj = self.build_object_from_data(data)
         try:
-            obj.save()
-        except IntegrityError as ie:
+            # If the asset finished saving in a different thread during the download/update process,
+            # return the pre-existing object
+            return self.model.objects.get(bynder_id=asset_id)
+        except self.model.DoesNotExist:
             try:
-                # If the 'bynder_id' is already taken, find the existing object to return
-                existing = self.model.objects.get(bynder_id=asset_id)
-            except self.model.DoesNotExist:
-                # The error must relate to a different field, so throw the original error
-                raise ie from None
-            else:
-                # If the new file was copied to media storage, ensure it is deleted
+                # Save the new object, triggering transfer of the file to media storage
+                obj.save()
+            except IntegrityError as integrity_error:
+                # It's likely the asset finished saving in a different thread while the file was
+                # being transferred to media storage
                 try:
-                    if obj.file.path != existing.file.path:
-                        obj.file.delete()
-                except (ValueError, FileNotFoundError):
-                    pass
-                return existing
-        else:
-            return obj
+                    # Lookup the existing object
+                    pre_existing = self.model.objects.get(bynder_id=asset_id)
+                except self.model.DoesNotExist:
+                    # The IntegrityError must have been caused by a custom field, so reraise
+                    raise integrity_error from None
+                else:
+                    # If the newly-downloaded file was successfully copied to storage, delete it
+                    with contextlib.suppress(ValueError, FileNotFoundError):
+                        if obj.file.path != pre_existing.file.path:
+                            obj.file.delete()
+                return pre_existing
+        return obj
 
     def update_object(self, asset_id: str, obj: BynderAssetMixin) -> BynderAssetMixin:
-        client = get_bynder_client()
-        data = client.asset_bank_client.media_info(asset_id)
+        data = self.asset_client.media_info(asset_id)
         if not obj.is_up_to_date(data):
             obj.update_from_asset_data(data)
             obj.save()
