@@ -49,4 +49,4 @@ class RedirectToBynderMixin:
             return redirect(
                 "https://" + settings.BYNDER_DOMAIN + f"/media/?mediaId={asset_id}"
             )
-        return super().get(request, *args, **kwargs)
+        return super().post(request, *args, **kwargs)
