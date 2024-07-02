@@ -27,6 +27,5 @@ def get_video_model():
         ) from e
     except LookupError as e:
         raise ImproperlyConfigured(
-            "BYNDER_VIDEO_MODEL refers to model '%s' that has not been installed"
-            % model_string
+            f"BYNDER_VIDEO_MODEL refers to model '{model_string}' that has not been installed"
         ) from e

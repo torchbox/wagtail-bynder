@@ -15,9 +15,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    # Keep in sync with .pre-comit-config.yaml
-    - run: python -Im pip install --user ruff==0.4.1
+    # Keep in sync with .pre-commit-config.yaml
+    - run: python -Im pip install --user ruff==0.5.0
 
     - name: Run ruff
       working-directory: ./src
-      run: ruff --output-format=github wagtail_bynder
+      run: ruff check --output-format=github wagtail_bynder
