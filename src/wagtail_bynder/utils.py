@@ -8,9 +8,11 @@ import requests
 from asgiref.local import Local
 from bynder_sdk import BynderClient
 from django.conf import settings
+from django.core.files import File
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.template.defaultfilters import filesizeformat
 from wagtail.models import Collection
+from willow import Image
 
 from .exceptions import BynderAssetFileTooLarge
 
@@ -57,6 +59,11 @@ def download_image(url: str) -> InMemoryUploadedFile:
     max_filesize_setting_name = "BYNDER_MAX_IMAGE_FILE_SIZE"
     max_filesize = getattr(settings, max_filesize_setting_name, 5242880)
     return download_file(url, max_filesize, max_filesize_setting_name)
+
+
+def get_image_dimensions(file: File) -> tuple[int, int]:
+    willow_image = Image.open(file)
+    return willow_image.get_size()
 
 
 def filename_from_url(url: str) -> str:

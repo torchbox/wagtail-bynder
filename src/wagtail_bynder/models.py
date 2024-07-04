@@ -1,18 +1,27 @@
+import io
 import logging
 import math
+import os
 
+from dataclasses import dataclass
 from datetime import datetime
 from mimetypes import guess_type
+from tempfile import NamedTemporaryFile
 from typing import Any
 
 from django.conf import settings
-from django.core.files.uploadedfile import UploadedFile
+from django.core.files.uploadedfile import InMemoryUploadedFile, UploadedFile
 from django.db import models
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import FieldPanel, MultiFieldPanel
 from wagtail.documents.models import AbstractDocument, Document
-from wagtail.images.models import AbstractImage, Image
+from wagtail.images.models import (
+    IMAGE_FORMAT_EXTENSIONS,
+    AbstractImage,
+    Filter,
+    Image,
+)
 from wagtail.models import Collection, CollectionMember
 from wagtail.search import index
 
@@ -22,6 +31,15 @@ from .exceptions import BynderAssetDataError
 
 
 logger = logging.getLogger("wagtail.images")
+
+
+@dataclass(frozen=True)
+class ConvertedImageDetails:
+    width: int
+    height: int
+    file_size: int
+    image_format: str
+    mime_type: str
 
 
 class BynderAssetMixin(models.Model):
@@ -265,6 +283,93 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
 
     def download_file(self, source_url: str) -> UploadedFile:
         return utils.download_image(source_url)
+
+    def process_downloaded_file(
+        self,
+        file: UploadedFile,
+        asset_data: dict[str, Any] | None = None,
+    ) -> UploadedFile:
+        """
+        Overrides ``BynderAssetWithFileMixin.process_downloaded_file()`` to
+        pass the downloaded image to ``convert_downloaded_image()`` before using it as
+        a value for this object's ``file`` field.
+        """
+
+        # Write to filesystem to avoid using memory for the same image
+        tmp = NamedTemporaryFile(mode="w+b", dir=settings.FILE_UPLOAD_TEMP_DIR)
+        details = self.convert_downloaded_image(file, tmp)
+
+        # The original file is now redundant and can be deleted, making
+        # more memory available
+        del file.file
+
+        # Load the converted image into memory to speed up the additional
+        # reads and writes performed by Wagtail
+        new_file = io.BytesIO()
+        tmp.seek(0)
+        with open(tmp.name, "rb") as source:
+            for line in source:
+                new_file.write(line)
+
+        name_minus_extension, _ = os.path.splitext(file.name)
+        new_extension = IMAGE_FORMAT_EXTENSIONS[details.image_format]
+
+        # Return replacement InMemoryUploadedFile
+        return InMemoryUploadedFile(
+            new_file,
+            field_name="file",
+            name=f"{name_minus_extension}{new_extension}",
+            content_type=details.mime_type,
+            size=details.file_size,
+            charset=None,
+        )
+
+    def convert_downloaded_image(
+        self, source_file, target_file
+    ) -> ConvertedImageDetails:
+        """
+        Handles the conversion of the supplied ``file`` into something
+        ``process_downloaded_file()`` can use to successfully assemble a
+        new ``InMemoryUploadedFile``.
+
+        ``target_file`` must be a writable file-like object, and is where the
+        new file contents is written to.
+
+        The return value is a ``ConvertedImageDetails`` object, which allows
+        ``process_downloaded_file()`` to determine the height, width,
+        format, mime-type and file size of the newly generated image without
+        having to perform any more file operations.
+        """
+        original_width, original_height = self.width, self.height
+
+        # Filter.run() expects the object's width and height to reflect
+        # the image we're formatting, so we update them temporarily
+        self.width, self.height = utils.get_image_dimensions(source_file)
+
+        # Retreieve maximum height and width from settings
+        max_width = int(getattr(settings, "BYNDER_IMAGE_MAX_WIDTH", 3500))
+        max_height = int(getattr(settings, "BYNDER_IMAGE_MAX_HEIGHT", 3500))
+
+        try:
+            # Use wagtail built-ins to resize/reformat the image
+            willow_image = Filter(f"max-{max_width}x{max_height}").run(
+                self,
+                target_file,
+                source_file,
+            )
+        finally:
+            # Always restore original field values
+            self.width, self.height = original_width, original_height
+
+        # Gather up all of the useful data about the new image
+        final_width, final_height = willow_image.get_size()
+        return ConvertedImageDetails(
+            final_width,
+            final_height,
+            target_file.tell(),
+            willow_image.format_name,
+            willow_image.mime_type,
+        )
 
     def set_focal_area_from_focus_point(
         self, x: int, y: int, original_height: int, original_width: int
