@@ -1,9 +1,44 @@
-from datetime import datetime
+import io
+import os
 
+from datetime import datetime
+from enum import StrEnum
+from random import choice
+from string import ascii_uppercase
+
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.utils.text import slugify
+from PIL import Image
 
 
 TEST_ASSET_ID = "1A7BA172-97B9-44A4-8C0AA41D9E8AE6A2"
+
+
+class ImageFormat(StrEnum):
+    JPEG = "JPEG"
+    GIF = "GIF"
+    PNG = "PNG"
+    BMP = "BMP"
+    WEBP = "WebP"
+    TIFF = "TIFF"
+
+
+IMAGE_EXTENSION_TO_FORMAT = {
+    ".jpg": (ImageFormat.JPEG, "image/jpeg"),
+    ".jpeg": (ImageFormat.JPEG, "image/jpeg"),
+    ".gif": (ImageFormat.GIF, "image/gif"),
+    ".png": (ImageFormat.PNG, "image/png"),
+    ".webp": (ImageFormat.WEBP, "image/webp"),
+    ".bmp": (ImageFormat.BMP, "image/bmp"),
+    ".tif": (ImageFormat.TIFF, "image/tiff"),
+    ".tiff": (ImageFormat.TIFF, "image/tiff"),
+}
+
+DOCUMENT_EXTENSION_TO_FORMAT = {
+    ".pdf": "application/pdf",
+    ".txt": "text/plain",
+    ".xml": "text/xml",
+}
 
 
 def get_test_asset_data(
@@ -86,3 +121,56 @@ def get_test_asset_data(
         ]
 
     return data
+
+
+def get_fake_image(
+    width: int = 100, height: int = 100, image_format: ImageFormat = ImageFormat.JPEG
+) -> io.BytesIO:
+    thumb_io = io.BytesIO()
+    with Image.new("RGB", (width, height), "blue") as thumb:
+        thumb.save(thumb_io, format=image_format)
+    return thumb_io
+
+
+def get_fake_document(size: int = 1024) -> io.BytesIO:
+    contents = "".join(choice(ascii_uppercase) for i in range(size))  # noqa: S311
+    return io.BytesIO(contents.encode("utf-8"))
+
+
+def get_fake_downloaded_image(
+    name: str = "fake.jpg", width: int = 100, height: int = 100
+) -> InMemoryUploadedFile:
+    _, ext = os.path.splitext(name.lower())
+    if ext not in IMAGE_EXTENSION_TO_FORMAT:
+        raise ValueError(
+            f"{ext} is not supported image file extension. Try one of the following: {list(IMAGE_EXTENSION_TO_FORMAT.keys())}"
+        )
+    image_format, content_type = IMAGE_EXTENSION_TO_FORMAT[ext]
+
+    return InMemoryUploadedFile(
+        get_fake_image(width, height, image_format),
+        field_name="file",
+        name=name,
+        content_type=content_type,
+        size=1048576,
+        charset="utf-8",
+    )
+
+
+def get_fake_downloaded_document(
+    name: str = "fake.pdf", size: int = 1024
+) -> InMemoryUploadedFile:
+    _, ext = os.path.splitext(name.lower())
+    if ext not in DOCUMENT_EXTENSION_TO_FORMAT:
+        raise ValueError(
+            f"{ext} is not supported document file extension. Try one of the following: {list(DOCUMENT_EXTENSION_TO_FORMAT.keys())}"
+        )
+
+    return InMemoryUploadedFile(
+        get_fake_document(size),
+        field_name="file",
+        name=name,
+        content_type=DOCUMENT_EXTENSION_TO_FORMAT[ext],
+        size=size,
+        charset="utf-8",
+    )
