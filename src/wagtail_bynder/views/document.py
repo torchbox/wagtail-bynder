@@ -56,7 +56,7 @@ class DocumentChooseView(chooser_views.DocumentChooseView):
         super().__init__(*args, **kwargs)
 
 
-class DocumentChosenView(chooser_views.DocumentChosenView, BynderAssetCopyMixin):
+class DocumentChosenView(BynderAssetCopyMixin, chooser_views.DocumentChosenView):
     model = get_document_model()
 
     def get(self, request: "HttpRequest", pk: str) -> "JsonResponse":
