@@ -65,10 +65,12 @@ class BynderSyncedDocumentTests(SimpleTestCase):
         self.obj.original_filesize = None
         self.assertFalse(hasattr(self.obj, "_file_changed"))
 
-        with mock.patch(
-            "wagtail_bynder.models.utils.download_asset", return_value=None
-        ):
+        with mock.patch.object(
+            self.obj, "download_file", return_value=None
+        ) as download_file_mock:
             self.obj.update_file(self.asset_data)
+
+        download_file_mock.assert_called_once_with(self.asset_data["original"])
 
         self.assertTrue(self.obj._file_changed)
         self.assertEqual(
@@ -175,10 +177,14 @@ class BynderSyncedImageTests(SimpleTestCase):
         self.obj.original_width = None
         self.assertFalse(hasattr(self.obj, "_file_changed"))
 
-        with mock.patch(
-            "wagtail_bynder.models.utils.download_asset", return_value=None
-        ):
+        with mock.patch.object(
+            self.obj, "download_file", return_value=None
+        ) as download_file_mock:
             self.obj.update_file(self.asset_data)
+
+        download_file_mock.assert_called_once_with(
+            self.asset_data["thumbnails"]["WagtailSource"]
+        )
 
         self.assertTrue(self.obj._file_changed)
         self.assertEqual(
