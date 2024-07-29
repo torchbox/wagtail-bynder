@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.templatetags.static import static
-from django.urls import reverse
 from django.utils.html import format_html
 from wagtail import hooks
 from wagtail.admin.menu import MenuItem
@@ -50,17 +49,11 @@ def hide_image_and_document_summary_items(request, summary_items):
 
 @hooks.register("insert_editor_js")
 def editor_js():
-    if model := get_video_model():
+    if get_video_model():
         return format_html(
             """
-            <script>
-                window.chooserUrls.videoChooser = '{0}';
-            </script>
-            <script src="{1}"></script>
+            <script src="{0}"></script>
             """,
-            reverse(
-                f"{model.snippet_viewset.get_chooser_admin_url_namespace()}:choose"
-            ),
             static("bynder/js/video-chooser-modal.js"),
         )
 
