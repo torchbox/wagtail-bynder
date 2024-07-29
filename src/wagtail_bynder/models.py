@@ -324,7 +324,9 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
             charset=None,
         )
 
-    def get_source_image_filter_string(self, original_format: str, is_animated: bool):
+    def get_source_image_filter_string(
+        self, original_format: str, is_animated: bool
+    ) -> str:
         """
         Return a string for ``convert_downloaded_image()`` to use to create a
         ``wagtail.images.models.Filter`` object that can be used for source image
@@ -336,10 +338,7 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
         max_height = int(getattr(settings, "BYNDER_MAX_SOURCE_IMAGE_HEIGHT", 3500))
 
         filter_str = f"max-{max_width}x{max_height}"
-        if (
-            utils.get_output_image_format(original_format, is_animated=is_animated)
-            == "jpeg"
-        ):
+        if utils.get_output_image_format(original_format, is_animated) == "jpeg":
             # Since this will be a source image, use a higher JPEG quality than normal
             filter_str += " format-jpeg jpegquality-90"
 
