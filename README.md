@@ -64,7 +64,6 @@ When communicating with Bynder about configuring a new instance for compatibilit
 2. A custom derivative must to be configured for image assets
 3. A couple of custom derivatives must be configured for video assets
 
-
 ### Why are custom derivatives needed?
 
 It is common for assets to be uploaded to a DAMS in formats that preserve as much quality as possible. For example, high-resolution uncompressed TIFF images are common for digital photography. While great for print and other media, such formats are simply overkill for most websites. Not only are images likely to be shown at much smaller dimensions in a web browser, but they are also likely to be converted to more web-friendly formats like AVIF or WebP by Wagtail, where the image quality of an uncompressed TIFF is unlikely to shine through.
@@ -252,6 +251,30 @@ representative Wagtail image (as it appears in `thumbnails` in the API represent
 WARNING: It's important to get this right, because if the specified derivative is NOT present in the response for an
 image for any reason, the ORIGINAL will be downloaded - which will lead to slow chooser response times and higher memory
 usage when generating renditions.
+
+### `BYNDER_MAX_DOCUMENT_FILE_SIZE`
+
+Example: `10485760`
+
+Default: `5242880`
+
+The maximum acceptable file size (in Bytes) when downloading a 'Document' asset from Bynder. This is safety measure to protect projects against memory spikes when file contents is loaded into memory, and can be tweaked on a project/environment basis to reflect:
+
+- How much RAM is available in the host infrastructure
+- How large the documents are that editors want to feature in content
+- Whether you are doing anything particularly memory intensive with document files in your project (e.g. text/content analysis)
+
+### `BYNDER_MAX_IMAGE_FILE_SIZE`
+
+Example: `10485760`
+
+Default: `5242880`
+
+The maximum acceptable file size (in Bytes) when downloading an 'Image' asset from Bynder. This is safety measure to protect projects against memory spikes when file contents is loaded into memory.
+
+This setting is provided separately to `BYNDER_MAX_DOCUMENT_FILE_SIZE`, because it often needs to be set to a lower value, even if enough RAM is available to hold the orignal file in memory. This is because server-size image libraries have to understand the individual pixel values of the image, which often requires much more memory than that of the original contents.
+
+As with `BYNDER_MAX_DOCUMENT_FILE_SIZE`, this can be tweaked for individual projects/environments to reflect how much RAM is available in the host infrastructure.
 
 ### `BYNDER_VIDEO_MODEL`
 

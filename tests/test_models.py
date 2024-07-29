@@ -9,7 +9,11 @@ from wagtail_bynder import get_video_model
 from wagtail_bynder.exceptions import BynderAssetDataError
 from wagtail_bynder.utils import filename_from_url
 
-from .utils import get_test_asset_data
+from .utils import (
+    get_fake_downloaded_document,
+    get_fake_downloaded_image,
+    get_test_asset_data,
+)
 
 
 class BynderSyncedDocumentTests(SimpleTestCase):
@@ -65,10 +69,22 @@ class BynderSyncedDocumentTests(SimpleTestCase):
         self.obj.original_filesize = None
         self.assertFalse(hasattr(self.obj, "_file_changed"))
 
-        with mock.patch(
-            "wagtail_bynder.models.utils.download_asset", return_value=None
+        fake_document = get_fake_downloaded_document()
+
+        with (
+            mock.patch.object(
+                self.obj, "download_file", return_value=fake_document
+            ) as download_file_mock,
+            mock.patch.object(
+                self.obj, "process_downloaded_file", return_value=fake_document
+            ) as process_downloaded_file_mock,
         ):
             self.obj.update_file(self.asset_data)
+
+        download_file_mock.assert_called_once_with(self.asset_data["original"])
+        process_downloaded_file_mock.assert_called_once_with(
+            fake_document, self.asset_data
+        )
 
         self.assertTrue(self.obj._file_changed)
         self.assertEqual(
@@ -175,10 +191,23 @@ class BynderSyncedImageTests(SimpleTestCase):
         self.obj.original_width = None
         self.assertFalse(hasattr(self.obj, "_file_changed"))
 
-        with mock.patch(
-            "wagtail_bynder.models.utils.download_asset", return_value=None
+        fake_image = get_fake_downloaded_image()
+        with (
+            mock.patch.object(
+                self.obj, "download_file", return_value=fake_image
+            ) as download_file_mock,
+            mock.patch.object(
+                self.obj, "process_downloaded_file", return_value=fake_image
+            ) as process_downloaded_file_mock,
         ):
             self.obj.update_file(self.asset_data)
+
+        download_file_mock.assert_called_once_with(
+            self.asset_data["thumbnails"]["WagtailSource"]
+        )
+        process_downloaded_file_mock.assert_called_once_with(
+            fake_image, self.asset_data
+        )
 
         self.assertTrue(self.obj._file_changed)
         self.assertEqual(

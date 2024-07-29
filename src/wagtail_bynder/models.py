@@ -6,6 +6,7 @@ from mimetypes import guess_type
 from typing import Any
 
 from django.conf import settings
+from django.core.files.uploadedfile import UploadedFile
 from django.db import models
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
@@ -155,7 +156,10 @@ class BynderAssetWithFileMixin(BynderAssetMixin):
 
     def update_file(self, asset_data: dict[str, Any]) -> None:
         source_url = self.extract_file_source(asset_data)
-        self.file = utils.download_asset(source_url)
+        file = self.download_file(source_url)
+        processed_file = self.process_downloaded_file(file, asset_data)
+
+        self.file = processed_file if processed_file is not None else file
 
         # Used to trigger additional updates on save()
         self._file_changed = True
@@ -163,6 +167,27 @@ class BynderAssetWithFileMixin(BynderAssetMixin):
         # Update supplementary field values
         self.source_filename = utils.filename_from_url(source_url)
         self.original_filesize = int(asset_data["fileSize"])
+
+    def download_file(self, source_url: str) -> UploadedFile:
+        raise NotImplementedError
+
+    def process_downloaded_file(
+        self, file: UploadedFile, asset_data: dict[str, Any]
+    ) -> UploadedFile:
+        """
+        A hook to allow subclasses to apply additional analysis/customisation
+        of asset files downloaded from Bynder BEFORE they are used to set the
+        object's ``file`` field value. The return value is an ``UploadedFile``
+        object that should be used to set the new field value.
+
+        The provided `file` object is considered mutable, so may be modified
+        directly and returned, or used purely as source data to create and
+        return an entirely new ``UploadedFile`` instance.
+
+        By default, the provided ``file`` is returned as is, without taking
+        any further action.
+        """
+        return file
 
 
 class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
@@ -237,6 +262,9 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
         self.original_width = int(asset_data["width"])
         self.original_height = int(asset_data["height"])
         return super().update_file(asset_data)
+
+    def download_file(self, source_url: str) -> UploadedFile:
+        return utils.download_image(source_url)
 
     def set_focal_area_from_focus_point(
         self, x: int, y: int, original_height: int, original_width: int
@@ -323,6 +351,9 @@ class BynderSyncedDocument(BynderAssetWithFileMixin, AbstractDocument):
                 "This is likely because the asset is marked as 'private' in Bynder. Wagtail needs the "
                 "'original' asset URL in order to download and save its own copy."
             ) from e
+
+    def download_file(self, source_url: str) -> UploadedFile:
+        return utils.download_document(source_url)
 
 
 class BynderSyncedVideo(

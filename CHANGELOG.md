@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+### Added
+
+- BYNDER_MAX_DOCUMENT_FILE_SIZE and BYNDER_MAX_IMAGE_FILE_SIZE settings to guard against memory spikes when downloading asset files ([#31]https://github.com/torchbox/wagtail-bynder/pull/31) @ababic
+
 ## [0.5.1] - 2024-07-29
 
 ### Fixed

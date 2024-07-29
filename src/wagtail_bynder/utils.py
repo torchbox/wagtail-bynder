@@ -9,38 +9,54 @@ from asgiref.local import Local
 from bynder_sdk import BynderClient
 from django.conf import settings
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.template.defaultfilters import filesizeformat
 from wagtail.models import Collection
+
+from .exceptions import BynderAssetFileTooLarge
 
 
 _DEFAULT_COLLECTION = Local()
 
 
-class DownloadedFile(BytesIO):
-    name: str
-    size: int
-    content_type: str | None
-    charset: str | None
+def download_file(
+    url: str, max_filesize: int, max_filesize_setting_name: str
+) -> InMemoryUploadedFile:
+    name = os.path.basename(url)
 
+    # Stream file to memory
+    file = BytesIO()
+    for line in requests.get(url, timeout=20, stream=True):
+        file.write(line)
+        if file.tell() > max_filesize:
+            file.truncate(0)
+            raise BynderAssetFileTooLarge(
+                f"File '{name}' exceeded the size limit enforced by the {max_filesize_setting_name} setting, which is currently set to {filesizeformat(max_filesize)}."
+            )
 
-def download_file(url: str) -> DownloadedFile:
-    raw_bytes = requests.get(url, timeout=20).content
-    f = DownloadedFile(raw_bytes)
-    f.name = os.path.basename(url)
-    f.size = len(raw_bytes)
-    f.content_type, f.charset = mimetypes.guess_type(f.name)
-    return f
+    size = file.tell()
+    file.seek(0)
 
-
-def download_asset(url: str) -> InMemoryUploadedFile:
-    f = download_file(url)
+    content_type, charset = mimetypes.guess_type(name)
     return InMemoryUploadedFile(
-        f,
-        name=f.name,
+        file,
         field_name="file",
-        size=f.size,
-        charset=f.charset,
-        content_type=f.content_type,
+        name=name,
+        content_type=content_type,
+        size=size,
+        charset=charset,
     )
+
+
+def download_document(url: str) -> InMemoryUploadedFile:
+    max_filesize_setting_name = "BYNDER_MAX_DOCUMENT_FILE_SIZE"
+    max_filesize = getattr(settings, max_filesize_setting_name, 5242880)
+    return download_file(url, max_filesize, max_filesize_setting_name)
+
+
+def download_image(url: str) -> InMemoryUploadedFile:
+    max_filesize_setting_name = "BYNDER_MAX_IMAGE_FILE_SIZE"
+    max_filesize = getattr(settings, max_filesize_setting_name, 5242880)
+    return download_file(url, max_filesize, max_filesize_setting_name)
 
 
 def filename_from_url(url: str) -> str:
