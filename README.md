@@ -262,7 +262,7 @@ The maximum acceptable file size (in Bytes) when downloading a 'Document' asset 
 
 - How much RAM is available in the host infrastructure
 - How large the documents are that editors want to feature in content
-- Whether you are doing anything particularly memory intensive with document files (e.g. text/content analysis)
+- Whether you are doing anything particularly memory intensive with document files in your project (e.g. text/content analysis)
 
 ### `BYNDER_MAX_IMAGE_FILE_SIZE`
 
