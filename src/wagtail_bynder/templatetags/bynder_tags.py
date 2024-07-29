@@ -38,7 +38,7 @@ def get_document_chosen_base_url():
 def get_video_chosen_base_url():
     model = get_video_model()
     if model:
-        url = model.snippet_viewset.chooser_viewset.get_url_name("choose")
+        url = reverse(model.snippet_viewset.chooser_viewset.get_url_name("choose"))
         if not url.endswith("/"):
             url += "/"
         return url
