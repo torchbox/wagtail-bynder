@@ -54,7 +54,7 @@ class ImageChooseView(chooser_views.ImageChooseView):
         super().__init__(*args, **kwargs)
 
 
-class ImageChosenView(chooser_views.ImageChosenView, BynderAssetCopyMixin):
+class ImageChosenView(BynderAssetCopyMixin, chooser_views.ImageChosenView):
     model = get_image_model()
 
     def get(self, request: "HttpRequest", pk: str) -> "JsonResponse":

@@ -31,7 +31,7 @@ class VideoChooseView(ChooseView):
         return self.model._meta.verbose_name
 
 
-class VideoChosenView(SnippetChosenView, BynderAssetCopyMixin):
+class VideoChosenView(BynderAssetCopyMixin, SnippetChosenView):
     def get(self, request: "HttpRequest", pk: str) -> "JsonResponse":
         try:
             obj = self.model.objects.get(bynder_id=pk)
