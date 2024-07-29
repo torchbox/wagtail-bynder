@@ -9,6 +9,7 @@ class BynderChooserModalOnloadHandlerFactory {
     this.assetType = opts?.assetType || null;
     this.chosenMultipleUrl = opts?.chosenMultipleUrl || "/";
     this.chosenSingleUrl = opts?.chosenSingleUrl || "/";
+    this.chosenUrlAppendSlash = window.chosenUrlappendSlash || true;
   }
 
   onLoadChooseStep(modal) {
@@ -49,6 +50,9 @@ class BynderChooserModalOnloadHandlerFactory {
         }
         else {
           url = chosenSingleUrl + assets[0].databaseId;
+          if (chosenUrlAppendSlash) {
+            url += "/";
+          }
         }
         modal.loadUrl(url, params);
         return false;

@@ -1,7 +1,7 @@
 const videoChooserModalOnloadHandlers = new window.BynderChooserModalOnloadHandlerFactory({
   assetType: "video",
-  chosenMultipleUrl: `${window.chooserUrls.videoChooser}chosen-multiple/`,
-  chosenSingleUrl: `${window.chooserUrls.videoChooser}chosen/`,
+  chosenMultipleUrl: `${window.videoChosenBaseUrl}chosen-multiple/`,
+  chosenSingleUrl: `${window.videoChosenBaseUrl}chosen/`,
 }).getOnLoadHandlers();
 
 class VideoChooserModal {
