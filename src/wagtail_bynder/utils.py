@@ -8,9 +8,11 @@ import requests
 from asgiref.local import Local
 from bynder_sdk import BynderClient
 from django.conf import settings
+from django.core.files import File
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.template.defaultfilters import filesizeformat
 from wagtail.models import Collection
+from willow import Image
 
 from .exceptions import BynderAssetFileTooLarge
 
@@ -57,6 +59,29 @@ def download_image(url: str) -> InMemoryUploadedFile:
     max_filesize_setting_name = "BYNDER_MAX_IMAGE_FILE_SIZE"
     max_filesize = getattr(settings, max_filesize_setting_name, 5242880)
     return download_file(url, max_filesize, max_filesize_setting_name)
+
+
+def get_image_info(file: File) -> tuple[int, int, str, bool]:
+    willow_image = Image.open(file)
+    width, height = willow_image.get_size()
+    return (width, height, willow_image.format_name, willow_image.has_animation())
+
+
+def get_output_image_format(original_format: str, *, is_animated: bool = False) -> str:
+    conversions = {
+        "avif": "png",
+        "bmp": "png",
+        "webp": "png",
+    }
+    if is_animated:
+        # Convert non-animated GIFs to PNG as well
+        conversions["gif"] = "png"
+
+    # Allow the user to override the conversions
+    custom_conversions = getattr(settings, "WAGTAILIMAGES_FORMAT_CONVERSIONS", {})
+    conversions.update(custom_conversions)
+
+    return conversions.get(original_format, original_format)
 
 
 def filename_from_url(url: str) -> str:

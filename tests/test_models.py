@@ -1,7 +1,9 @@
+import io
+
 from unittest import mock
 
 from django.conf import settings
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, override_settings
 from wagtail.documents import get_document_model
 from wagtail.images import get_image_model
 
@@ -292,6 +294,74 @@ class BynderSyncedImageTests(SimpleTestCase):
         new_focal_point = self.obj.get_focal_point()
         self.assertEqual(new_focal_point, current_focal_point)
         self.assertFalse(self.obj._focal_point_changed)
+
+    def test_process_downloaded_file(self):
+        fake_image = get_fake_downloaded_image("example.jpg", 500, 200)
+        state_before = self.obj.__dict__
+
+        # The original image data should be available via the `file` attribute
+        self.assertTrue(fake_image.file)
+
+        result = self.obj.process_downloaded_file(fake_image, self.asset_data)
+
+        # Wagtail doesn't convert JPEGs to a differet format by default, so the
+        # resulting name and content type should be the same as what was provided
+        self.assertEqual(result.name, fake_image.name)
+        self.assertEqual(result.content_type, fake_image.content_type)
+
+        # The original image data should have been deleted to create headroom
+        # for the converted image
+        self.assertFalse(hasattr(fake_image, "file"))
+
+        # No attribute values should on the object itself should have changed
+        self.assertEqual(state_before, self.obj.__dict__)
+
+    @override_settings(
+        BYNDER_MAX_SOURCE_IMAGE_WIDTH=100,
+        BYNDER_MAX_SOURCE_IMAGE_HEIGHT=100,
+        WAGTAILIMAGES_FORMAT_CONVERSIONS={"gif": "png", "bmp": "png", "tiff": "jpeg"},
+    )
+    def test_convert_downloaded_image(self):
+        for original_details, expected_details in (
+            (
+                ("tall.gif", "gif", "image/gif", 240, 400),
+                ("tall.png", "png", "image/png", 60, 100),
+            ),
+            (
+                ("wide.bmp", "bmp", "image/bmp", 400, 100),
+                ("wide.png", "png", "image/png", 100, 25),
+            ),
+            (
+                ("big-square.tif", "tiff", "image/tiff", 400, 400),
+                ("big-square.jpg", "jpeg", "image/jpeg", 100, 100),
+            ),
+            (
+                ("small-square.tiff", "tiff", "image/tiff", 80, 80),
+                ("small-square.jpg", "jpeg", "image/jpeg", 80, 80),
+            ),
+        ):
+            with self.subTest(f"{original_details[0]} becomes {expected_details[0]}"):
+                original = get_fake_downloaded_image(
+                    name=original_details[0],
+                    width=original_details[3],
+                    height=original_details[4],
+                )
+                self.assertEqual(original.content_type, original_details[2])
+                result = self.obj.convert_downloaded_image(original, io.BytesIO())
+                self.assertEqual(
+                    (
+                        result.image_format,
+                        result.mime_type,
+                        result.width,
+                        result.height,
+                    ),
+                    (
+                        expected_details[1],
+                        expected_details[2],
+                        expected_details[3],
+                        expected_details[4],
+                    ),
+                )
 
 
 class BynderSyncedVideoTests(SimpleTestCase):

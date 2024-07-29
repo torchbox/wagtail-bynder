@@ -56,6 +56,16 @@ To sync images updated within the last three days:
 $ python manage.py update_stale_images --days=3
 ```
 
+### Automatic conversion and downsizing of images
+
+When the `BYNDER_IMAGE_SOURCE_THUMBNAIL_NAME` derivative for an image is successfully downloaded by Wagtail, it is passed to the `convert_downloaded_image()` method of your custom image model in order to convert it into something more suitable for Wagtail.
+
+Firstly, downloaded images are converted to the most appropriate type, according to your project's `WAGTAILIMAGES_FORMAT_CONVERSIONS` setting and Wagtail's default preferences. For example, by default, `BMP` and `WebP` image are converted to `PNG`.
+
+Secondly, images are downsized according to the `BYNDER_MAX_SOURCE_IMAGE_WIDTH` and `BYNDER_MAX_SOURCE_IMAGE_HEIGHT` setting values, in a way that preserves their original aspect ratio. Whilst Bynder is expected to address this on their side by generating appropriately-sized derivatives - this isn't always a possibile with their basic offering.
+
+Ensuring source images only have enough pixels to meet the rendition-generation requirements of your project has an enormous long-term benefit for a Wagtail project (especially one with image-heavy content pages), as it provides efficiency gains **every single time** a new rendition is generated.
+
 ## What to ask of Bynder
 
 When communicating with Bynder about configuring a new instance for compatibility with Wagtail, there are a few things you'll want to be clear about:
@@ -241,17 +251,6 @@ An API token for Bynder's JavaScript 'compact view' to use. The value is injecte
 for the JavaScript to pick up, exposing it to Wagtail users. Because of this, it should be different to `BYNDER_API_TOKEN`
 and only needs to have basic read permissions.
 
-### `BYNDER_IMAGE_SOURCE_THUMBNAIL_NAME`
-
-Default: `"WagtailSource"`
-
-The name of the automatically generated derivative that should be downloaded and used as the `file` value for the
-representative Wagtail image (as it appears in `thumbnails` in the API representation).
-
-WARNING: It's important to get this right, because if the specified derivative is NOT present in the response for an
-image for any reason, the ORIGINAL will be downloaded - which will lead to slow chooser response times and higher memory
-usage when generating renditions.
-
 ### `BYNDER_MAX_DOCUMENT_FILE_SIZE`
 
 Example: `10485760`
@@ -264,6 +263,17 @@ The maximum acceptable file size (in Bytes) when downloading a 'Document' asset 
 - How large the documents are that editors want to feature in content
 - Whether you are doing anything particularly memory intensive with document files in your project (e.g. text/content analysis)
 
+### `BYNDER_IMAGE_SOURCE_THUMBNAIL_NAME`
+
+Default: `"WagtailSource"`
+
+The name of the automatically generated derivative that should be downloaded and used as the `file` value for the
+representative Wagtail image (as it appears in `thumbnails` in the API representation).
+
+WARNING: It's important to get this right, because if the specified derivative is NOT present in the response for an
+image for any reason, the ORIGINAL will be downloaded - which will lead to slow chooser response times and higher memory
+usage when generating renditions.
+
 ### `BYNDER_MAX_IMAGE_FILE_SIZE`
 
 Example: `10485760`
@@ -275,6 +285,22 @@ The maximum acceptable file size (in Bytes) when downloading an 'Image' asset fr
 This setting is provided separately to `BYNDER_MAX_DOCUMENT_FILE_SIZE`, because it often needs to be set to a lower value, even if enough RAM is available to hold the orignal file in memory. This is because server-size image libraries have to understand the individual pixel values of the image, which often requires much more memory than that of the original contents.
 
 As with `BYNDER_MAX_DOCUMENT_FILE_SIZE`, this can be tweaked for individual projects/environments to reflect how much RAM is available in the host infrastructure.
+
+### `BYNDER_MAX_SOURCE_IMAGE_WIDTH`
+
+Example: `5000`
+
+Default: `3500`
+
+Used to restrict the **width** of images downloaded from Bynder before they are used as source images for objects in Wagtail's image library.
+
+### `BYNDER_MAX_SOURCE_IMAGE_HEIGHT`
+
+Example: `5000`
+
+Default: `3500`
+
+Used to restrict the **height** of images downloaded from Bynder before they are used as source images for objects in Wagtail's image library.
 
 ### `BYNDER_VIDEO_MODEL`
 
