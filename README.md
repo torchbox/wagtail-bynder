@@ -62,7 +62,7 @@ When the `BYNDER_IMAGE_SOURCE_THUMBNAIL_NAME` derivative for an image is success
 
 Firstly, downloaded images are converted to the most appropriate type, according to your project's `WAGTAILIMAGES_FORMAT_CONVERSIONS` setting and Wagtail's default preferences. For example, by default, `BMP` and `WebP` image are converted to `PNG`.
 
-Secondly, images are downsized according to the `BYNDER_MAX_IMAGE_WIDTH` and `BYNDER_MAX_IMAGE_HEIGHT` setting values, in a way that preserves their original aspect ratio. Whilst Bynder is expected to address this on their side by generating appropriately-sized derivatives - this isn't always a possibile with their basic offering.
+Secondly, images are downsized according to the `BYNDER_MAX_SOURCE_IMAGE_WIDTH` and `BYNDER_MAX_SOURCE_IMAGE_HEIGHT` setting values, in a way that preserves their original aspect ratio. Whilst Bynder is expected to address this on their side by generating appropriately-sized derivatives - this isn't always a possibile with their basic offering.
 
 Ensuring source images only have enough pixels to meet the rendition-generation requirements of your project has an enormous long-term benefit for a Wagtail project (especially one with image-heavy content pages), as it provides efficiency gains **every single time** a new rendition is generated.
 
@@ -286,7 +286,7 @@ This setting is provided separately to `BYNDER_MAX_DOCUMENT_FILE_SIZE`, because 
 
 As with `BYNDER_MAX_DOCUMENT_FILE_SIZE`, this can be tweaked for individual projects/environments to reflect how much RAM is available in the host infrastructure.
 
-### `BYNDER_MAX_IMAGE_WIDTH`
+### `BYNDER_MAX_SOURCE_IMAGE_WIDTH`
 
 Example: `5000`
 
@@ -294,7 +294,7 @@ Default: `3500`
 
 Used to restrict the **width** of images downloaded from Bynder before they are used as source images for objects in Wagtail's image library.
 
-### `BYNDER_MAX_IMAGE_HEIGHT`
+### `BYNDER_MAX_SOURCE_IMAGE_HEIGHT`
 
 Example: `5000`
 

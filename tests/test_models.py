@@ -317,8 +317,8 @@ class BynderSyncedImageTests(SimpleTestCase):
         self.assertEqual(state_before, self.obj.__dict__)
 
     @override_settings(
-        BYNDER_IMAGE_MAX_WIDTH=100,
-        BYNDER_IMAGE_MAX_HEIGHT=100,
+        BYNDER_MAX_SOURCE_IMAGE_WIDTH=100,
+        BYNDER_MAX_SOURCE_IMAGE_HEIGHT=100,
         WAGTAILIMAGES_FORMAT_CONVERSIONS={"gif": "png", "bmp": "png", "tiff": "jpeg"},
     )
     def test_convert_downloaded_image(self):
