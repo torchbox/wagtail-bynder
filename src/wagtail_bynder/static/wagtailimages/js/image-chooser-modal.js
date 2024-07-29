@@ -1,7 +1,7 @@
 const imageChooserModalOnloadHandlers = new window.BynderChooserModalOnloadHandlerFactory({
   assetType: "image",
-  chosenMultipleUrl: `${window.imageChosenBaseURL}chosen-multiple/`,
-  chosenSingleUrl: `${window.imageChosenBaseURL}chosen/`,
+  chosenMultipleUrl: `${window.imageChosenBaseUrl}chosen-multiple/`,
+  chosenSingleUrl: `${window.imageChosenBaseUrl}chosen/`,
 }).getOnLoadHandlers();
 
 class ImageChooserModal {

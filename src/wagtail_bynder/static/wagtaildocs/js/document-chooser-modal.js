@@ -1,7 +1,7 @@
 const documentChooserModalOnloadHandlers = new window.BynderChooserModalOnloadHandlerFactory({
   assetType: "document",
-  chosenMultipleUrl: `${window.documentChosenBaseURL}chosen-multiple/`,
-  chosenSingleUrl: `${window.documentChosenBaseURL}chosen/`,
+  chosenMultipleUrl: `${window.documentChosenBaseUrl}chosen-multiple/`,
+  chosenSingleUrl: `${window.documentChosenBaseUrl}chosen/`,
 }).getOnLoadHandlers();
 
 class DocumentChooserModal {
