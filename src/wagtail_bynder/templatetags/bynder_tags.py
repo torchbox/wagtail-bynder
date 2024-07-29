@@ -43,3 +43,8 @@ def get_video_chosen_base_url():
             url += "/"
         return url
     return ""
+
+
+@register.simple_tag
+def get_append_slash():
+    return str(bool(settings.APPEND_SLASH)).lower()

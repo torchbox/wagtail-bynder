@@ -6,6 +6,7 @@
     <script>
         window.bynderAPIToken = '{% bynder_compactview_api_token %}';
         window.bynderDomain = '{% bynder_domain %}';
+        window.chosenUrlAppendSlash = {% get_append_slash %};
         window.imageChosenBaseUrl = "{% get_image_chosen_base_url %}";
         window.documentChosenBaseUrl = "{% get_document_chosen_base_url %}";
         window.videoChosenBaseUrl = "{% get_video_chosen_base_url %}";
