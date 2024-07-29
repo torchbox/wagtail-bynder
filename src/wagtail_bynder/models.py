@@ -325,7 +325,7 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
         )
 
     def get_source_image_filter_string(
-        self, original_format: str, is_animated: bool
+        self, original_format: str, *, is_animated: bool
     ) -> str:
         """
         Return a string for ``convert_downloaded_image()`` to use to create a
@@ -338,7 +338,10 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
         max_height = int(getattr(settings, "BYNDER_MAX_SOURCE_IMAGE_HEIGHT", 3500))
 
         filter_str = f"max-{max_width}x{max_height}"
-        if utils.get_output_image_format(original_format, is_animated) == "jpeg":
+        if (
+            utils.get_output_image_format(original_format, is_animated=is_animated)
+            == "jpeg"
+        ):
             # Since this will be a source image, use a higher JPEG quality than normal
             filter_str += " format-jpeg jpegquality-90"
 
@@ -362,7 +365,9 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
         """
 
         width, height, original_format, is_animated = utils.get_image_info(source_file)
-        filter_str = self.get_source_image_filter_string(original_format, is_animated)
+        filter_str = self.get_source_image_filter_string(
+            original_format, is_animated=is_animated
+        )
 
         # Filter.run() expects the object's width and height to reflect
         # the image we're formatting, so we update them temporarily

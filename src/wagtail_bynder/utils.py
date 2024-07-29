@@ -67,7 +67,7 @@ def get_image_info(file: File) -> tuple[int, int, str, bool]:
     return (width, height, willow_image.format_name, willow_image.has_animation())
 
 
-def get_output_image_format(original_format: str, is_animated: bool) -> str:
+def get_output_image_format(original_format: str, *, is_animated: bool = False) -> str:
     conversions = {
         "avif": "png",
         "bmp": "png",
