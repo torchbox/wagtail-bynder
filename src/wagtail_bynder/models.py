@@ -343,7 +343,7 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
             == "jpeg"
         ):
             # Since this will be a source image, use a higher JPEG quality than normal
-            filter_str += " format-jpeg jpegquality-90"
+            filter_str += "|format-jpeg|jpegquality-90"
 
         return filter_str
 
