@@ -61,9 +61,27 @@ def download_image(url: str) -> InMemoryUploadedFile:
     return download_file(url, max_filesize, max_filesize_setting_name)
 
 
-def get_image_dimensions(file: File) -> tuple[int, int]:
+def get_image_info(file: File) -> tuple[int, int, str, bool]:
     willow_image = Image.open(file)
-    return willow_image.get_size()
+    width, height = willow_image.get_size()
+    return (width, height, willow_image.format_name, willow_image.has_animation())
+
+
+def get_output_image_format(original_format: str, *, is_animated: bool = False):
+    conversions = {
+        "avif": "png",
+        "bmp": "png",
+        "webp": "png",
+    }
+    if is_animated:
+        # Convert non-animated GIFs to PNG as well
+        conversions["gif"] = "png"
+
+    # Allow the user to override the conversions
+    custom_conversions = getattr(settings, "WAGTAILIMAGES_FORMAT_CONVERSIONS", {})
+    conversions.update(custom_conversions)
+
+    return conversions.get(original_format, original_format)
 
 
 def filename_from_url(url: str) -> str:

@@ -340,19 +340,27 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
         format, mime-type and file size of the newly generated image without
         having to perform any more file operations.
         """
-        original_width, original_height = self.width, self.height
-
-        # Filter.run() expects the object's width and height to reflect
-        # the image we're formatting, so we update them temporarily
-        self.width, self.height = utils.get_image_dimensions(source_file)
+        width, height, original_format, is_animated = utils.get_image_info(source_file)
 
         # Retreieve maximum height and width from settings
         max_width = int(getattr(settings, "BYNDER_IMAGE_MAX_WIDTH", 3500))
         max_height = int(getattr(settings, "BYNDER_IMAGE_MAX_HEIGHT", 3500))
 
+        filter_str = f"max-{max_width}x{max_height}"
+        output_format = utils.get_output_image_format(
+            original_format, is_animated=is_animated
+        )
+        if output_format == "jpeg":
+            # Since this will be a source image, use a higher JPEG quality than normal
+            filter_str += " format-jpeg jpegquality-90"
+
+        # Filter.run() expects the object's width and height to reflect
+        # the image we're formatting, so we update them temporarily
+        original_width, original_height = self.width, self.height
+        self.width, self.height = width, height
         try:
             # Use wagtail built-ins to resize/reformat the image
-            willow_image = Filter(f"max-{max_width}x{max_height}").run(
+            willow_image = Filter(filter_str).run(
                 self,
                 target_file,
                 source_file,
