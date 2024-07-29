@@ -324,6 +324,27 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
             charset=None,
         )
 
+    def get_source_image_filter_string(self, original_format: str, is_animated: bool):
+        """
+        Return a string for ``convert_downloaded_image()`` to use to create a
+        ``wagtail.images.models.Filter`` object that can be used for source image
+        conversion.
+        """
+
+        # Retreieve maximum height and width from settings
+        max_width = int(getattr(settings, "BYNDER_MAX_SOURCE_IMAGE_WIDTH", 3500))
+        max_height = int(getattr(settings, "BYNDER_MAX_SOURCE_IMAGE_HEIGHT", 3500))
+
+        filter_str = f"max-{max_width}x{max_height}"
+        if (
+            utils.get_output_image_format(original_format, is_animated=is_animated)
+            == "jpeg"
+        ):
+            # Since this will be a source image, use a higher JPEG quality than normal
+            filter_str += " format-jpeg jpegquality-90"
+
+        return filter_str
+
     def convert_downloaded_image(
         self, source_file, target_file
     ) -> ConvertedImageDetails:
@@ -340,19 +361,9 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
         format, mime-type and file size of the newly generated image without
         having to perform any more file operations.
         """
+
         width, height, original_format, is_animated = utils.get_image_info(source_file)
-
-        # Retreieve maximum height and width from settings
-        max_width = int(getattr(settings, "BYNDER_IMAGE_MAX_WIDTH", 3500))
-        max_height = int(getattr(settings, "BYNDER_IMAGE_MAX_HEIGHT", 3500))
-
-        filter_str = f"max-{max_width}x{max_height}"
-        output_format = utils.get_output_image_format(
-            original_format, is_animated=is_animated
-        )
-        if output_format == "jpeg":
-            # Since this will be a source image, use a higher JPEG quality than normal
-            filter_str += " format-jpeg jpegquality-90"
+        filter_str = self.get_source_image_filter_string(original_format, is_animated)
 
         # Filter.run() expects the object's width and height to reflect
         # the image we're formatting, so we update them temporarily
