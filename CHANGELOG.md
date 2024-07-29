@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+## [0.5] - 2024-07-29
+
+### Fixed
+
+- Compatibility with Wagtail 6.1 ([#34](https://github.com/torchbox/wagtail-bynder/pull/34)) @ababic
+
 ## [0.4.1] - 2024-07-02
 
 ### Fixed
@@ -72,8 +78,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial release
 
-
-[unreleased]: https://github.com/torchbox/wagtail-bynder/compare/v0.4.1...HEAD
+[unreleased]: https://github.com/torchbox/wagtail-bynder/compare/v0.5...HEAD
+[0.5]: https://github.com/torchbox/wagtail-bynder/compare/v.0.4...v0.5
 [0.4.1]: https://github.com/torchbox/wagtail-bynder/compare/v.0.4...v0.4.1
 [0.4]: https://github.com/torchbox/wagtail-bynder/compare/v.0.3...v0.4
 [0.3]: https://github.com/torchbox/wagtail-bynder/compare/v.0.2...v0.3
