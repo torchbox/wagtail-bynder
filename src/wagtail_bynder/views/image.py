@@ -2,10 +2,16 @@ from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.views.generic import UpdateView
+from wagtail import VERSION as WAGTAIL_VERSION
 from wagtail.images import get_image_model
 from wagtail.images.views import chooser as chooser_views
-from wagtail.images.views.images import DeleteView
-from wagtail.images.views.images import edit as image_edit
+
+
+if WAGTAIL_VERSION < (6, 3):
+    from wagtail.images.views.images import DeleteView
+    from wagtail.images.views.images import edit as image_edit
+else:
+    from wagtail.images.views.images import DeleteView, EditView
 
 from .mixins import BynderAssetCopyMixin, RedirectToBynderMixin
 
@@ -14,25 +20,30 @@ if TYPE_CHECKING:
     from django.http import HttpRequest, JsonResponse
 
 
-class ClassBasedWagtailImageEditView(UpdateView):
-    """
-    A class-based view that mimics the behaviour of wagtail's function-based
-    image edit view, and can be extended with view mixins.
-    """
+if WAGTAIL_VERSION < (6, 3):
 
-    # TODO: Use class from Wagtail once the image app views are refactored
-    model = get_image_model()
-    pk_url_kwarg = "image_id"
+    class ClassBasedWagtailImageEditView(UpdateView):
+        """
+        A class-based view that mimics the behaviour of wagtail's function-based
+        image edit view, and can be extended with view mixins.
+        """
 
-    def get(self, request, *args, **kwargs):
-        return image_edit(request, *args, **kwargs)
+        # TODO: Use class from Wagtail once the image app views are refactored
+        model = get_image_model()
+        pk_url_kwarg = "image_id"
 
-    def post(self, request, *args, **kwargs):
-        return image_edit(request, *args, **kwargs)
+        def get(self, request, *args, **kwargs):
+            return image_edit(request, *args, **kwargs)
 
+        def post(self, request, *args, **kwargs):
+            return image_edit(request, *args, **kwargs)
 
-class ImageEditView(RedirectToBynderMixin, ClassBasedWagtailImageEditView):
-    pass
+    class ImageEditView(RedirectToBynderMixin, ClassBasedWagtailImageEditView):
+        pass
+else:
+
+    class ImageEditView(RedirectToBynderMixin, EditView):
+        pass
 
 
 class ImageDeleteView(RedirectToBynderMixin, DeleteView):
