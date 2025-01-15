@@ -364,6 +364,6 @@ All contributions are welcome! See [CONTRIBUTING.md](https://github.com/torchbox
 
 Supported versions:
 
-- Python 3.11, 3.12
-- Django 3.2, 4.2, 5.0
-- Wagtail 4.1 (LTS), 5.1, 5.2 (LTS)
+- Python 3.11, 3.12, 3.13
+- Django 4.2, 5.0, 5.1
+- Wagtail 5.2 (LTS), 6.0, 6.1, 6.2, 6.3 (LTS)
