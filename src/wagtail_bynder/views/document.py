@@ -2,10 +2,16 @@ from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.views.generic import UpdateView
+from wagtail import VERSION as WAGTAIL_VERSION
 from wagtail.documents import get_document_model
 from wagtail.documents.views import chooser as chooser_views
-from wagtail.documents.views.documents import DeleteView
-from wagtail.documents.views.documents import edit as document_edit
+
+
+if WAGTAIL_VERSION < (6, 3):
+    from wagtail.documents.views.documents import DeleteView
+    from wagtail.documents.views.documents import edit as document_edit
+else:
+    from wagtail.documents.views.documents import DeleteView, EditView
 
 from .mixins import BynderAssetCopyMixin, RedirectToBynderMixin
 
@@ -14,25 +20,30 @@ if TYPE_CHECKING:
     from django.http import HttpRequest, JsonResponse
 
 
-class ClassBasedDocumentEditView(UpdateView):
-    """
-    A class-based view that mimics the behaviour of wagtail's function-based
-    document edit view, and can be extended with view mixins.
-    """
+if WAGTAIL_VERSION < (6, 3):
 
-    # TODO: Use class from Wagtail once the documents app views are refactored
-    model = get_document_model()
-    pk_url_kwarg = "document_id"
+    class ClassBasedDocumentEditView(UpdateView):
+        """
+        A class-based view that mimics the behaviour of wagtail's function-based
+        document edit view, and can be extended with view mixins.
+        """
 
-    def get(self, request, *args, **kwargs):
-        return document_edit(request, *args, **kwargs)
+        # TODO: Use class from Wagtail once the documents app views are refactored
+        model = get_document_model()
+        pk_url_kwarg = "document_id"
 
-    def post(self, request, *args, **kwargs):
-        return document_edit(request, *args, **kwargs)
+        def get(self, request, *args, **kwargs):
+            return document_edit(request, *args, **kwargs)
 
+        def post(self, request, *args, **kwargs):
+            return document_edit(request, *args, **kwargs)
 
-class DocumentEditView(RedirectToBynderMixin, ClassBasedDocumentEditView):
-    pass
+    class DocumentEditView(RedirectToBynderMixin, ClassBasedDocumentEditView):
+        pass
+else:
+
+    class DocumentEditView(RedirectToBynderMixin, EditView):
+        pass
 
 
 class DocumentDeleteView(RedirectToBynderMixin, DeleteView):
