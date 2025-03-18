@@ -30,7 +30,7 @@ jobs:
       matrix:
         python-version: ["3.13"]
         django: ["5.1"]
-        wagtail: ["6.3"]
+        wagtail: ["6.4"]
         db: ["postgres"]
 
     services:
@@ -77,7 +77,7 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12"]
         django: ["4.2"]
-        wagtail: ["5.2", "6.1", "6.2"]
+        wagtail: ["5.2", "6.3"]
         db: ["sqlite"]
     steps:
       - uses: actions/checkout@v4
