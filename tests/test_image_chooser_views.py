@@ -32,7 +32,6 @@ class TestImageChosenView(TransactionTestCase, WagtailTestUtils):
         # return a test image instead of creating its own
 
         image = CustomImageFactory.create()
-        print(image)
         with mock.patch(
             "wagtail_bynder.views.image.ImageChosenView.create_object",
             return_value=image,
