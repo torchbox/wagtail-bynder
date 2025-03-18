@@ -30,7 +30,9 @@ class TestImageChosenView(TransactionTestCase, WagtailTestUtils):
     def test_creates_image_if_asset_id_not_recognised(self):
         # For expediency and predictability, have create_object()
         # return a test image instead of creating its own
+
         image = CustomImageFactory.create()
+        print(image)
         with mock.patch(
             "wagtail_bynder.views.image.ImageChosenView.create_object",
             return_value=image,
@@ -49,6 +51,7 @@ class TestImageChosenView(TransactionTestCase, WagtailTestUtils):
                     "title": image.title,
                     "preview": mock.ANY,
                     "edit_url": reverse("wagtailimages:edit", args=[image.id]),
+                    "default_alt_text": image.title,
                 },
             },
         )
@@ -76,6 +79,7 @@ class TestImageChosenView(TransactionTestCase, WagtailTestUtils):
                     "title": image.title,
                     "preview": mock.ANY,
                     "edit_url": reverse("wagtailimages:edit", args=[image.id]),
+                    "default_alt_text": image.title,
                 },
             },
         )
@@ -103,6 +107,7 @@ class TestImageChosenView(TransactionTestCase, WagtailTestUtils):
                     "title": image.title,
                     "preview": mock.ANY,
                     "edit_url": reverse("wagtailimages:edit", args=[image.id]),
+                    "default_alt_text": image.title,
                 },
             },
         )
