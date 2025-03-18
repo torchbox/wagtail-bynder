@@ -5,7 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.7] - unreleased
+## Unreleased
+
+### Added
+
+- Support for Wagtail 6.4
+
+### Changed
+
+- Image chooser tests now include new `default_alt_text` property
+
+## Removed
+
+- Wagtail versions (6.0-6.2) from tox testing matrix
+
+## [0.7] - 2025-01-15
 
 ### Added
 
