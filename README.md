@@ -366,4 +366,4 @@ Supported versions:
 
 - Python 3.11, 3.12, 3.13
 - Django 4.2, 5.0, 5.1
-- Wagtail 5.2 (LTS), 6.0, 6.1, 6.2, 6.3 (LTS)
+- Wagtail 5.2 (LTS), 6.3 (LTS), 6.4
