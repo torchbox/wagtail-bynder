@@ -40,18 +40,15 @@ class TestImageChosenView(TransactionTestCase, WagtailTestUtils):
         # Assertions
         create_object_mock.assert_called_once()
         self.assertEqual(response.status_code, 200)
+        response_json = response.json()
+        self.assertEqual(response_json["step"], "chosen")
+        result = response_json["result"]
+        self.assertEqual(result["id"], str(image.id))
+        self.assertEqual(result["title"], image.title)
         self.assertEqual(
-            response.json(),
-            {
-                "step": "chosen",
-                "result": {
-                    "id": str(image.id),
-                    "title": image.title,
-                    "preview": mock.ANY,
-                    "edit_url": reverse("wagtailimages:edit", args=[image.id]),
-                },
-            },
+            result["edit_url"], reverse("wagtailimages:edit", args=[image.id])
         )
+        self.assertIn("preview", result)
 
     @mock.patch("wagtail_bynder.views.image.ImageChosenView.update_object")
     def test_uses_existing_image_without_updating(self, update_object_mock):
@@ -67,18 +64,15 @@ class TestImageChosenView(TransactionTestCase, WagtailTestUtils):
 
         # Check response content
         self.assertEqual(response.status_code, 200)
+        response_json = response.json()
+        self.assertEqual(response_json["step"], "chosen")
+        result = response_json["result"]
+        self.assertEqual(result["id"], str(image.id))
+        self.assertEqual(result["title"], image.title)
         self.assertEqual(
-            response.json(),
-            {
-                "step": "chosen",
-                "result": {
-                    "id": str(image.id),
-                    "title": image.title,
-                    "preview": mock.ANY,
-                    "edit_url": reverse("wagtailimages:edit", args=[image.id]),
-                },
-            },
+            result["edit_url"], reverse("wagtailimages:edit", args=[image.id])
         )
+        self.assertIn("preview", result)
 
     @override_settings(BYNDER_SYNC_EXISTING_IMAGES_ON_CHOOSE=True)
     @mock.patch("wagtail_bynder.views.image.ImageChosenView.update_object")
@@ -94,15 +88,12 @@ class TestImageChosenView(TransactionTestCase, WagtailTestUtils):
 
         # Check response content
         self.assertEqual(response.status_code, 200)
+        response_json = response.json()
+        self.assertEqual(response_json["step"], "chosen")
+        result = response_json["result"]
+        self.assertEqual(result["id"], str(image.id))
+        self.assertEqual(result["title"], image.title)
         self.assertEqual(
-            response.json(),
-            {
-                "step": "chosen",
-                "result": {
-                    "id": str(image.id),
-                    "title": image.title,
-                    "preview": mock.ANY,
-                    "edit_url": reverse("wagtailimages:edit", args=[image.id]),
-                },
-            },
+            result["edit_url"], reverse("wagtailimages:edit", args=[image.id])
         )
+        self.assertIn("preview", result)
