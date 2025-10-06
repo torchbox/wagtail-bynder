@@ -1,7 +1,6 @@
 import datetime
 
 from io import StringIO
-from typing import Type
 from unittest import mock
 
 from django.core.management import call_command
@@ -44,7 +43,7 @@ class SyncCommandTestsMixin:
     """
 
     command_name: str = ""
-    command_class: Type = None
+    command_class: type = None
     uses_media_info_for_individual_assets: bool = False
 
     @classmethod
@@ -221,8 +220,8 @@ class RefreshCommandTestsMixin:
     """
 
     command_name: str = ""
-    command_class: Type
-    factory_class: Type
+    command_class: type
+    factory_class: type
 
     @classmethod
     def setUpClass(cls):

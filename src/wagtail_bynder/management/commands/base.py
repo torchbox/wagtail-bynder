@@ -33,8 +33,7 @@ class BaseBynderSyncCommand(BaseModelCommand):
             "--minutes",
             type=int,
             help=_(
-                "The number of minutes into the past to look for asset "
-                "modifications."
+                "The number of minutes into the past to look for asset modifications."
             ),
         )
         parser.add_argument(
