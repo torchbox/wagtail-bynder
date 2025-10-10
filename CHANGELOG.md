@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.7] - unreleased
 
+- Add gracful handling of image and document download errors
+
 ### Added
 
 - Test against Wagtail 6.2 ([#35](https://github.com/torchbox/wagtail-bynder/pull/36)) @nickmoreton
