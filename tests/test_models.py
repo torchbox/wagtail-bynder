@@ -123,6 +123,29 @@ class BynderSyncedDocumentTests(SimpleTestCase):
         self.assertEqual(self.obj.is_limited_use, self.asset_data["limited"] == 1)
         self.assertEqual(self.obj.is_public, self.asset_data["isPublic"] == 1)
 
+    def test_update_file_download_error_graceful(self):
+        self.obj.source_filename = None
+        self.obj.original_filesize = None
+        # Simulate download error
+        with mock.patch.object(
+            self.obj,
+            "download_file",
+            side_effect=BynderAssetDownloadError("http://example.com/bad-doc", 502),
+        ):
+            self.obj.update_file(self.asset_data)
+        self.assertFalse(hasattr(self.obj, "_file_changed"))
+        self.assertFalse(self.obj.file)
+
+    def test_update_file_too_large_graceful(self):
+        self.obj.source_filename = None
+        self.obj.original_filesize = None
+        with mock.patch.object(
+            self.obj, "download_file", side_effect=BynderAssetFileTooLarge("Too big")
+        ):
+            self.obj.update_file(self.asset_data)
+        self.assertFalse(hasattr(self.obj, "_file_changed"))
+        self.assertFalse(self.obj.file)
+
 
 class BynderSyncedImageTests(SimpleTestCase):
     def setUp(self):
