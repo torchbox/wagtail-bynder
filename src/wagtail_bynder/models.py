@@ -27,7 +27,12 @@ from wagtail.search import index
 
 from wagtail_bynder import utils
 
-from .exceptions import BynderAssetDataError
+from .exceptions import (
+    BynderAssetDataError,
+    BynderAssetDownloadError,
+    BynderAssetFileTooLarge,
+    BynderInvalidImageContentError,
+)
 
 
 logger = logging.getLogger("wagtail.images")
@@ -279,7 +284,24 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
     def update_file(self, asset_data: dict[str, Any]) -> None:
         self.original_width = int(asset_data["width"])
         self.original_height = int(asset_data["height"])
-        return super().update_file(asset_data)
+        try:
+            return super().update_file(asset_data)
+        except (
+            BynderAssetDownloadError,
+            BynderInvalidImageContentError,
+            BynderAssetFileTooLarge,
+        ) as e:
+            # Log and swallow download/content issues so a transient Bynder outage
+            # cannot poison the local database with invalid image data.
+            logger.warning(
+                "Bynder image download skipped for asset %s: %s",
+                asset_data.get("id"),
+                e,
+            )
+            # Ensure file-related change flags are not set if partial work occurred
+            if hasattr(self, "_file_changed"):
+                delattr(self, "_file_changed")
+            return None
 
     def download_file(self, source_url: str) -> UploadedFile:
         return utils.download_image(source_url)

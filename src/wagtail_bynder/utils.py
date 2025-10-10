@@ -1,6 +1,8 @@
 import mimetypes
 import os
+import re
 
+from contextlib import suppress
 from io import BytesIO
 
 import requests
@@ -14,21 +16,46 @@ from django.template.defaultfilters import filesizeformat
 from wagtail.models import Collection
 from willow import Image
 
-from .exceptions import BynderAssetFileTooLarge
+from .exceptions import (
+    BynderAssetDownloadError,
+    BynderAssetFileTooLarge,
+    BynderInvalidImageContentError,
+)
 
 
 _DEFAULT_COLLECTION = Local()
 
 
 def download_file(
-    url: str, max_filesize: int, max_filesize_setting_name: str
+    url: str,
+    max_filesize: int,
+    max_filesize_setting_name: str,
+    *,
+    expect_image: bool = False,
 ) -> InMemoryUploadedFile:
     name = os.path.basename(url)
 
-    # Stream file to memory
+    try:
+        response = requests.get(url, timeout=20, stream=True)
+    except Exception as e:
+        raise BynderAssetDownloadError(url, message=str(e)) from e
+
+    if response.status_code != 200:
+        # Consume (small) text body for context if available
+        message = ""
+        with suppress(Exception):
+            # Only read a small slice to avoid memory blow-up
+            message = response.text[:500]
+        raise BynderAssetDownloadError(
+            url, status_code=response.status_code, message=message
+        )
+
+    # Stream body to memory enforcing size limit
     file = BytesIO()
-    for line in requests.get(url, timeout=20, stream=True):
-        file.write(line)
+    for chunk in response.iter_content(chunk_size=8192):
+        if not chunk:
+            continue
+        file.write(chunk)
         if file.tell() > max_filesize:
             file.truncate(0)
             raise BynderAssetFileTooLarge(
@@ -38,7 +65,32 @@ def download_file(
     size = file.tell()
     file.seek(0)
 
-    content_type, charset = mimetypes.guess_type(name)
+    # If we expected an image but got probable HTML / JSON error page, detect early
+    if expect_image:
+        sample = file.read(4096)
+        file.seek(0)
+        # Heuristics: starts with <!DOCTYPE html or <html or JSON body or contains typical gateway phrases
+        lowered = sample.lower()
+        if (
+            lowered.startswith((b"<!doctype html", b"<html", b"<?xml"))
+            or b"<title>502" in lowered
+            or b"bad gateway" in lowered
+            or re.search(rb"<h1>.*(error|gateway).*</h1>", lowered)
+        ):
+            raise BynderInvalidImageContentError(
+                url, "received HTML error page instead of image bytes"
+            )
+
+    content_type = response.headers.get("Content-Type")
+    if not content_type:
+        guessed, charset = mimetypes.guess_type(name)
+        content_type = guessed
+    else:
+        # Strip charset etc
+        if ";" in content_type:
+            content_type = content_type.split(";")[0].strip()
+        charset = None
+
     return InMemoryUploadedFile(
         file,
         field_name="file",
@@ -58,7 +110,9 @@ def download_document(url: str) -> InMemoryUploadedFile:
 def download_image(url: str) -> InMemoryUploadedFile:
     max_filesize_setting_name = "BYNDER_MAX_IMAGE_FILE_SIZE"
     max_filesize = getattr(settings, max_filesize_setting_name, 5242880)
-    return download_file(url, max_filesize, max_filesize_setting_name)
+    return download_file(
+        url, max_filesize, max_filesize_setting_name, expect_image=True
+    )
 
 
 def get_image_info(file: File) -> tuple[int, int, str, bool]:

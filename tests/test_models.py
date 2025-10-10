@@ -8,7 +8,12 @@ from wagtail.documents import get_document_model
 from wagtail.images import get_image_model
 
 from wagtail_bynder import get_video_model
-from wagtail_bynder.exceptions import BynderAssetDataError
+from wagtail_bynder.exceptions import (
+    BynderAssetDataError,
+    BynderAssetDownloadError,
+    BynderAssetFileTooLarge,
+    BynderInvalidImageContentError,
+)
 from wagtail_bynder.utils import filename_from_url
 
 from .utils import (
@@ -219,6 +224,58 @@ class BynderSyncedImageTests(SimpleTestCase):
         self.assertEqual(self.obj.original_filesize, self.asset_data["fileSize"])
         self.assertEqual(self.obj.original_height, self.asset_data["height"])
         self.assertEqual(self.obj.original_width, self.asset_data["width"])
+
+    def test_update_file_download_error_graceful(self):
+        self.obj.source_filename = None
+        self.obj.original_filesize = None
+        self.obj.original_height = None
+        self.obj.original_width = None
+
+        # Simulate a download error
+        with mock.patch.object(
+            self.obj,
+            "download_file",
+            side_effect=BynderAssetDownloadError("http://example.com/bad", 502),
+        ):
+            # Should not raise
+            self.obj.update_file(self.asset_data)
+
+        # _file_changed should NOT be set
+        self.assertFalse(hasattr(self.obj, "_file_changed"))
+        # file should remain unset
+        self.assertFalse(self.obj.file)
+
+    def test_update_file_invalid_content_graceful(self):
+        self.obj.source_filename = None
+        self.obj.original_filesize = None
+        self.obj.original_height = None
+        self.obj.original_width = None
+
+        with mock.patch.object(
+            self.obj,
+            "download_file",
+            side_effect=BynderInvalidImageContentError(
+                "http://example.com/err", "html error"
+            ),
+        ):
+            self.obj.update_file(self.asset_data)
+
+        self.assertFalse(hasattr(self.obj, "_file_changed"))
+        self.assertFalse(self.obj.file)
+
+    def test_update_file_too_large_graceful(self):
+        self.obj.source_filename = None
+        self.obj.original_filesize = None
+        self.obj.original_height = None
+        self.obj.original_width = None
+
+        with mock.patch.object(
+            self.obj, "download_file", side_effect=BynderAssetFileTooLarge("Too big")
+        ):
+            self.obj.update_file(self.asset_data)
+
+        self.assertFalse(hasattr(self.obj, "_file_changed"))
+        self.assertFalse(self.obj.file)
 
     def test_update_from_asset_data(self):
         self.obj.title = None
