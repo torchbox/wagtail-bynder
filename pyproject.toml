@@ -32,7 +32,7 @@ requires-python = ">=3.11"
 dependencies = [
     "Django>=4.2",
     "Wagtail>=5.2",
-    "bynder-sdk>=1.1.5,<2.0"
+    "bynder-sdk>=1.1.5,<2.1"
 ]
 
 [project.optional-dependencies]
