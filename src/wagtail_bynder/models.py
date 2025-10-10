@@ -179,17 +179,27 @@ class BynderAssetWithFileMixin(BynderAssetMixin):
 
     def update_file(self, asset_data: dict[str, Any]) -> None:
         source_url = self.extract_file_source(asset_data)
-        file = self.download_file(source_url)
-        processed_file = self.process_downloaded_file(file, asset_data)
-
-        self.file = processed_file if processed_file is not None else file
-
-        # Used to trigger additional updates on save()
-        self._file_changed = True
-
-        # Update supplementary field values
-        self.source_filename = utils.filename_from_url(source_url)
-        self.original_filesize = int(asset_data["fileSize"])
+        try:
+            file = self.download_file(source_url)
+            processed_file = self.process_downloaded_file(file, asset_data)
+        except (
+            BynderAssetDownloadError,
+            BynderInvalidImageContentError,
+            BynderAssetFileTooLarge,
+        ) as e:
+            logger.warning(
+                "Bynder asset download skipped for asset %s: %s",
+                asset_data.get("id"),
+                e,
+            )
+            if hasattr(self, "_file_changed"):
+                delattr(self, "_file_changed")
+            return None
+        else:
+            self.file = processed_file if processed_file is not None else file
+            self._file_changed = True
+            self.source_filename = utils.filename_from_url(source_url)
+            self.original_filesize = int(asset_data["fileSize"])
 
     def download_file(self, source_url: str) -> UploadedFile:
         raise NotImplementedError
@@ -284,24 +294,7 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
     def update_file(self, asset_data: dict[str, Any]) -> None:
         self.original_width = int(asset_data["width"])
         self.original_height = int(asset_data["height"])
-        try:
-            return super().update_file(asset_data)
-        except (
-            BynderAssetDownloadError,
-            BynderInvalidImageContentError,
-            BynderAssetFileTooLarge,
-        ) as e:
-            # Log and swallow download/content issues so a transient Bynder outage
-            # cannot poison the local database with invalid image data.
-            logger.warning(
-                "Bynder image download skipped for asset %s: %s",
-                asset_data.get("id"),
-                e,
-            )
-            # Ensure file-related change flags are not set if partial work occurred
-            if hasattr(self, "_file_changed"):
-                delattr(self, "_file_changed")
-            return None
+        return super().update_file(asset_data)
 
     def download_file(self, source_url: str) -> UploadedFile:
         return utils.download_image(source_url)
@@ -318,19 +311,18 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
         """
 
         # Write to filesystem to avoid using memory for the same image
-        tmp = NamedTemporaryFile(mode="w+b", dir=settings.FILE_UPLOAD_TEMP_DIR)
-        details = self.convert_downloaded_image(file, tmp)
+        with NamedTemporaryFile(mode="w+b", dir=settings.FILE_UPLOAD_TEMP_DIR) as tmp:
+            details = self.convert_downloaded_image(file, tmp)
 
-        # The original file is now redundant and can be deleted, making
-        # more memory available
-        del file.file
+            # The original file is now redundant and can be deleted, making
+            # more memory available
+            del file.file
 
-        # Load the converted image into memory to speed up the additional
-        # reads and writes performed by Wagtail
-        new_file = io.BytesIO()
-        tmp.seek(0)
-        with open(tmp.name, "rb") as source:
-            for line in source:
+            # Load the converted image into memory to speed up the additional
+            # reads and writes performed by Wagtail
+            new_file = io.BytesIO()
+            tmp.seek(0)
+            for line in tmp:
                 new_file.write(line)
 
         name_minus_extension, _ = os.path.splitext(file.name)
