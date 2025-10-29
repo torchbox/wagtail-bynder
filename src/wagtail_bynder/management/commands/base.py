@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from requests import HTTPError
 
+from wagtail_bynder.exceptions import BynderAssetDownloadError
 from wagtail_bynder.models import BynderAssetMixin
 from wagtail_bynder.utils import get_bynder_client
 
@@ -164,8 +165,16 @@ class BaseBynderSyncCommand(BaseModelCommand):
             self.stdout.write(f"  {key}: {value}")
         self.stdout.write("-" * 80)
 
-        obj.update_from_asset_data(asset_data)
-        obj.save()
+        try:
+            obj.update_from_asset_data(asset_data)
+            obj.save()
+        except BynderAssetDownloadError as e:
+            self.stdout.write(
+                f"ERROR: Failed to download asset '{asset_data['id']}': {e}\n"
+            )
+            self.stdout.write(
+                f"Skipping update for {repr(obj)}. The asset will be retried on the next sync.\n"
+            )
 
 
 class BaseBynderRefreshCommand(BaseModelCommand):
@@ -244,5 +253,13 @@ class BaseBynderRefreshCommand(BaseModelCommand):
         self.stdout.write(
             f"Updating <{self.model._meta.label}: pk='{obj.pk}' title='{obj.title}'>"  # type: ignore[attr-defined]
         )
-        obj.update_from_asset_data(asset_data, force_download=self.force_download)
-        obj.save()
+        try:
+            obj.update_from_asset_data(asset_data, force_download=self.force_download)
+            obj.save()
+        except BynderAssetDownloadError as e:
+            self.stdout.write(
+                f"ERROR: Failed to download asset '{asset_data['id']}': {e}\n"
+            )
+            self.stdout.write(
+                f"Skipping update for {repr(obj)}. The asset will be retried on the next sync.\n"
+            )
