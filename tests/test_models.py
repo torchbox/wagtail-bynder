@@ -8,7 +8,7 @@ from wagtail.documents import get_document_model
 from wagtail.images import get_image_model
 
 from wagtail_bynder import get_video_model
-from wagtail_bynder.exceptions import BynderAssetDataError
+from wagtail_bynder.exceptions import BynderAssetDataError, BynderAssetDownloadError
 from wagtail_bynder.utils import filename_from_url
 
 from .utils import (
@@ -117,6 +117,23 @@ class BynderSyncedDocumentTests(SimpleTestCase):
         self.assertEqual(self.obj.is_archived, self.asset_data["archive"] == 1)
         self.assertEqual(self.obj.is_limited_use, self.asset_data["limited"] == 1)
         self.assertEqual(self.obj.is_public, self.asset_data["isPublic"] == 1)
+
+    def test_download_error_prevents_bad_file_creation(self):
+        """Test that server errors prevent creation of bad files"""
+        # Mock the requests.get to return a 502 error
+        mock_response = mock.Mock()
+        mock_response.status_code = 502
+
+        with (
+            mock.patch("wagtail_bynder.utils.requests.get", return_value=mock_response),
+            self.assertRaises(BynderAssetDownloadError) as cm,
+        ):
+            self.obj.download_file(self.asset_data["original"])
+
+        # Verify the error message is about server error
+        self.assertIn("Server error downloading", str(cm.exception))
+        # Verify no file was created on the object
+        self.assertFalse(self.obj.file)
 
 
 class BynderSyncedImageTests(SimpleTestCase):
@@ -362,6 +379,23 @@ class BynderSyncedImageTests(SimpleTestCase):
                         expected_details[4],
                     ),
                 )
+
+    def test_download_error_prevents_bad_file_creation(self):
+        """Test that server errors prevent creation of bad files"""
+        # Mock the requests.get to return a 502 error
+        mock_response = mock.Mock()
+        mock_response.status_code = 502
+
+        with (
+            mock.patch("wagtail_bynder.utils.requests.get", return_value=mock_response),
+            self.assertRaises(BynderAssetDownloadError) as cm,
+        ):
+            self.obj.download_file(self.asset_data["thumbnails"]["WagtailSource"])
+
+        # Verify the error message is about server error
+        self.assertIn("Server error downloading", str(cm.exception))
+        # Verify no file was created on the object
+        self.assertFalse(self.obj.file)
 
 
 class BynderSyncedVideoTests(SimpleTestCase):
