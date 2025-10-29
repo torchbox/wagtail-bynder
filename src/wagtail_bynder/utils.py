@@ -14,7 +14,7 @@ from django.template.defaultfilters import filesizeformat
 from wagtail.models import Collection
 from willow import Image
 
-from .exceptions import BynderAssetFileTooLarge
+from .exceptions import BynderAssetDownloadError, BynderAssetFileTooLarge
 
 
 _DEFAULT_COLLECTION = Local()
@@ -24,11 +24,20 @@ def download_file(
     url: str, max_filesize: int, max_filesize_setting_name: str
 ) -> InMemoryUploadedFile:
     name = os.path.basename(url)
+    response = requests.get(url, timeout=20, stream=True)
+
+    # Make sure we don't store error responses instead of the file requested
+    if response.status_code != 200:
+        raise BynderAssetDownloadError(
+            f"Server error downloading '{name}' from Bynder. "
+        )
 
     # Stream file to memory
     file = BytesIO()
-    for line in requests.get(url, timeout=20, stream=True):
-        file.write(line)
+    for chunk in response.iter_content(chunk_size=8192):
+        if not chunk:
+            continue
+        file.write(chunk)
         if file.tell() > max_filesize:
             file.truncate(0)
             raise BynderAssetFileTooLarge(

@@ -10,3 +10,9 @@ class BynderAssetFileTooLarge(Exception):
     Raised when an asset file being downloaded from Bynder is found to be
     larger than specified in ``settings.BYNDER_MAX_DOWNLOAD_FILE_SIZE``
     """
+
+
+class BynderAssetDownloadError(Exception):
+    """
+    Raised when a server error occurs while downloading an asset from Bynder.
+    """
