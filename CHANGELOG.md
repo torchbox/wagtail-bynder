@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Optimisation: Only initialise view classes in `PatchWagtailURLsMiddleware` when we know they are being used as a replacement ([#36](https://github.com/torchbox/wagtail-bynder/pull/36)) @ababic
 
+### Fixed
+
+- Improved handling for unexpected server error responses when downloading Bynder assets ([#40](https://github.com/torchbox/wagtail-bynder/issues/40))
+
 ## [0.6] - 2024-07-29
 
 ### Added
