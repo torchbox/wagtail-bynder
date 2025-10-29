@@ -3,11 +3,13 @@ from typing import TYPE_CHECKING
 from django.conf import settings
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
+from wagtail.admin.modal_workflow import render_modal_workflow
 from wagtail.admin.views.generic.chooser import ChooseView
 from wagtail.snippets.views.chooser import SnippetChooserViewSet, SnippetChosenView
 from wagtail.snippets.views.snippets import EditView, SnippetViewSet
 
 from wagtail_bynder import get_video_model
+from wagtail_bynder.exceptions import BynderAssetDownloadError
 
 from .mixins import BynderAssetCopyMixin, RedirectToBynderMixin
 
@@ -34,12 +36,25 @@ class VideoChooseView(ChooseView):
 class VideoChosenView(BynderAssetCopyMixin, SnippetChosenView):
     def get(self, request: "HttpRequest", pk: str) -> "JsonResponse":
         try:
-            obj = self.model.objects.get(bynder_id=pk)
-        except self.model.DoesNotExist:
-            obj = self.create_object(pk)
-        else:
-            if getattr(settings, "BYNDER_SYNC_EXISTING_VIDEOS_ON_CHOOSE", False):
-                self.update_object(pk, obj)
+            try:
+                obj = self.model.objects.get(bynder_id=pk)
+            except self.model.DoesNotExist:
+                obj = self.create_object(pk)
+            else:
+                if getattr(settings, "BYNDER_SYNC_EXISTING_VIDEOS_ON_CHOOSE", False):
+                    self.update_object(pk, obj)
+        except BynderAssetDownloadError as e:
+            # Return error step to display message in the chooser modal
+            return render_modal_workflow(
+                request,
+                None,
+                None,
+                None,
+                json_data={
+                    "step": "error",
+                    "error_message": f"<strong>Failed to fetch video from Bynder:</strong> {str(e)} Please try again later.",
+                },
+            )
         return self.get_chosen_response(obj)
 
 

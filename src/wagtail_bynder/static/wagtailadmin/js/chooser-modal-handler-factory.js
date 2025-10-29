@@ -21,6 +21,26 @@ class BynderChooserModalOnloadHandlerFactory {
     modal.close();
   }
 
+  onLoadErrorStep(modal, jsonData) {
+    // Display error message in the modal
+    const errorHtml = `
+      <div class="messages" role="status">
+        <ul>
+          <li class="error">
+            <svg class="icon icon-warning messages-icon" aria-hidden="true">
+              <use href="#icon-warning"></use>
+            </svg>
+            ${jsonData.error_message || 'An error occurred'}
+          </li>
+        </ul>
+      </div>
+    `;
+    // Insert error at the top of the modal body
+    $(modal.body).prepend(errorHtml);
+    // Re-initialize the Bynder view so user can try again
+    this.initBynderCompactView(modal);
+  }
+
   initBynderCompactView(modal) {
     // NOTE: This div is added to the template:
     // wagtailadmin/chooser/choose-bynder.html template
@@ -77,6 +97,9 @@ class BynderChooserModalOnloadHandlerFactory {
       },
       [this.chosenStepName]: (modal, jsonData) => {
           this.onLoadChosenStep(modal, jsonData);
+      },
+      error: (modal, jsonData) => {
+          this.onLoadErrorStep(modal, jsonData);
       },
     };
   }
