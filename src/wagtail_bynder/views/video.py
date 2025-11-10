@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.utils.functional import cached_property
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.modal_workflow import render_modal_workflow
 from wagtail.admin.views.generic.chooser import ChooseView
@@ -52,7 +53,10 @@ class VideoChosenView(BynderAssetCopyMixin, SnippetChosenView):
                 None,
                 json_data={
                     "step": "error",
-                    "error_message": f"<strong>Failed to fetch video from Bynder:</strong> {str(e)} Please try again later.",
+                    "error_message": format_html(
+                        "<strong>Failed to fetch video from Bynder:</strong> {error} Please try again later.",
+                        error=e,
+                    ),
                 },
             )
         return self.get_chosen_response(obj)

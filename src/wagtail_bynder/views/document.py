@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from django.conf import settings
+from django.utils.html import format_html
 from django.views.generic import UpdateView
 from wagtail import VERSION as WAGTAIL_VERSION
 from wagtail.admin.modal_workflow import render_modal_workflow
@@ -91,7 +92,10 @@ class DocumentChosenView(BynderAssetCopyMixin, chooser_views.DocumentChosenView)
                 None,
                 json_data={
                     "step": "error",
-                    "error_message": f"<strong>Failed to download document from Bynder:</strong> {str(e)} Please try again later.",
+                    "error_message": format_html(
+                        "<strong>Failed to download document from Bynder:</strong> {error} Please try again later.",
+                        error=e,
+                    ),
                 },
             )
         return self.get_chosen_response(obj)
