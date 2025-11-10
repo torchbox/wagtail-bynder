@@ -170,10 +170,14 @@ class BaseBynderSyncCommand(BaseModelCommand):
             obj.save()
         except BynderAssetDownloadError as e:
             self.stdout.write(
-                f"ERROR: Failed to download asset '{asset_data['id']}': {e}\n"
+                self.style.ERROR(
+                    f"ERROR: Failed to download asset '{asset_data['id']}': {e}\n"
+                )
             )
             self.stdout.write(
-                f"Skipping update for {repr(obj)}. The asset will be retried on the next sync.\n"
+                self.style.WARNING(
+                    f"Skipping update for {repr(obj)}. The asset will be retried on the next sync.\n"
+                )
             )
 
 
@@ -258,8 +262,12 @@ class BaseBynderRefreshCommand(BaseModelCommand):
             obj.save()
         except BynderAssetDownloadError as e:
             self.stdout.write(
-                f"ERROR: Failed to download asset '{asset_data['id']}': {e}\n"
+                self.style.ERROR(
+                    f"ERROR: Failed to download asset '{asset_data['id']}': {e}\n"
+                )
             )
             self.stdout.write(
-                f"Skipping update for {repr(obj)}. The asset will be retried on the next sync.\n"
+                self.style.WARNING(
+                    f"Skipping update for {repr(obj)}. The asset will be retried on the next sync.\n"
+                )
             )
