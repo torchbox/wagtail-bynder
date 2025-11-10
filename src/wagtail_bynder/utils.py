@@ -32,9 +32,10 @@ def download_file(
             f"Server error downloading '{name}' from Bynder. "
         )
 
-    # Stream file to memory
     file = BytesIO()
-    for chunk in response.iter_content(chunk_size=8192):
+    # Stream the file to memory. We use iter_content() instead of the default iterator for requests.Response,
+    # as the latter uses iter_lines() which isn't suitable for streaming binary data.
+    for chunk in response.iter_content():
         if not chunk:
             continue
         file.write(chunk)
