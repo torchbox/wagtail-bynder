@@ -23,20 +23,14 @@ class BynderChooserModalOnloadHandlerFactory {
 
   onLoadErrorStep(modal, jsonData) {
     // Display error message in the modal
-    const errorHtml = `
-      <div class="messages" role="status">
-        <ul>
-          <li class="error">
-            <svg class="icon icon-warning messages-icon" aria-hidden="true">
-              <use href="#icon-warning"></use>
-            </svg>
-            ${jsonData.error_message || 'An error occurred'}
-          </li>
-        </ul>
-      </div>
-    `;
-    // Insert error at the top of the modal body
-    $(modal.body).prepend(errorHtml);
+    $(modal.body).append(
+      '<div class="help-block help-critical">' +
+        '<strong>' +
+        gettext('Server Error') +
+        ': </strong>' +
+        jsonData.error_message +
+        '</div>',
+    );
     // Re-initialize the Bynder view so user can try again
     this.initBynderCompactView(modal);
   }
