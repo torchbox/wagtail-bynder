@@ -5,7 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.7] - unreleased
+## [0.8] - 2025-11-12
+
+### Fixed
+
+- Improved handling for unexpected server error responses when downloading Bynder assets ([#43](hhttps://github.com/torchbox/wagtail-bynder/pull/43/)) @alxbridge
+
+## [0.7] - 2025-01-15
 
 ### Added
 
@@ -16,9 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Optimisation: Only initialise view classes in `PatchWagtailURLsMiddleware` when we know they are being used as a replacement ([#36](https://github.com/torchbox/wagtail-bynder/pull/36)) @ababic
 
-### Fixed
-
-- Improved handling for unexpected server error responses when downloading Bynder assets ([#40](https://github.com/torchbox/wagtail-bynder/issues/40))
 
 ## [0.6] - 2024-07-29
 
