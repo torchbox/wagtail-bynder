@@ -24,6 +24,22 @@ class DownloadFileTests(SimpleTestCase):
         self.assertIn("file.jpg", str(cm.exception))
         self.assertIn("Server error downloading", str(cm.exception))
 
+    def test_download_file_raises_error_on_empty_response(self):
+        """Test that download_file raises BynderAssetDownloadError for successful-but-empty responses"""
+        mock_response = mock.Mock()
+        mock_response.status_code = 200
+        # Mock iter_content to return no chunks (empty file)
+        mock_response.iter_content = mock.Mock(return_value=[])
+
+        with (
+            mock.patch("wagtail_bynder.utils.requests.get", return_value=mock_response),
+            self.assertRaises(BynderAssetDownloadError) as cm,
+        ):
+            download_file("https://example.com/empty.jpg", 5242880, "TEST_SETTING")
+
+        self.assertIn("empty.jpg", str(cm.exception))
+        self.assertIn("empty", str(cm.exception).lower())
+
     def test_download_file_succeeds_on_200(self):
         """Test that download_file works correctly with 200 status"""
         mock_response = mock.Mock()
