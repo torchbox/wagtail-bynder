@@ -1,6 +1,7 @@
 import mimetypes
 import os
 
+from http import HTTPStatus
 from io import BytesIO
 
 import requests
@@ -27,7 +28,7 @@ def download_file(
     response = requests.get(url, timeout=20, stream=True)
 
     # Make sure we don't store error responses instead of the file requested
-    if response.status_code != 200:
+    if response.status_code != HTTPStatus.OK:
         raise BynderAssetDownloadError(
             f"Server error downloading '{name}' from Bynder. "
         )
