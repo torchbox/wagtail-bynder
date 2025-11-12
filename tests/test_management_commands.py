@@ -10,6 +10,7 @@ from freezegun import freeze_time
 from requests import HTTPError, Response
 from testapp.factories import CustomDocumentFactory, CustomImageFactory, VideoFactory
 
+from wagtail_bynder.exceptions import BynderAssetDownloadError
 from wagtail_bynder.management.commands.refresh_bynder_documents import (
     Command as UpdateDocuments,
 )
@@ -396,6 +397,183 @@ class UpdateVideosTestCase(RefreshCommandTestsMixin, TestCase):
 
     command_name = "refresh_bynder_videos"
     command_class = UpdateVideos
+    factory_class = VideoFactory
+
+
+class SyncCommandErrorHandlingMixin:
+    """
+    A mixin class for testing error handling in sync commands
+    ('update_stale_images', 'update_stale_documents', 'update_stale_videos').
+    """
+
+    command_name: str = ""
+    factory_class: Type
+
+    @classmethod
+    def setUpTestData(cls):
+        # Create an object with old bynder_last_modified so it's considered stale
+        cls.test_obj = cls.factory_class(
+            bynder_id=TEST_ASSET_ID,
+            bynder_last_modified=datetime.datetime(2000, 1, 1, tzinfo=datetime.UTC),
+        )
+
+    def setUp(self):
+        super().setUp()
+
+        # Define a mock to stand-in for the Bynder API client
+        self.mock_api_client = mock.Mock()
+        self.mock_api_client.media_list.return_value = [TEST_ASSET_DATA]
+        self.mock_api_client.media_info.return_value = TEST_ASSET_DATA
+
+    def call_command_with_error(self, error):
+        """
+        Calls the command with mocked API client and update_from_asset_data
+        that raises the specified error.
+        """
+        stdout = StringIO()
+
+        with (
+            mock.patch(
+                "wagtail_bynder.management.commands.base.get_bynder_client",
+                return_value=mock.Mock(asset_bank_client=self.mock_api_client),
+            ),
+            mock.patch.object(
+                self.test_obj.__class__, "update_from_asset_data", side_effect=error
+            ),
+        ):
+            call_command(
+                self.command_name,
+                stdout=stdout,
+                stderr=StringIO(),
+            )
+
+        return stdout.getvalue()
+
+    def test_handles_download_errors_gracefully(self):
+        """Test that command handles download errors without crashing"""
+        error = BynderAssetDownloadError(
+            "Server error downloading 'test.jpg' from Bynder. "
+        )
+        output = self.call_command_with_error(error)
+
+        # Check that error was written to stdout
+        self.assertIn("ERROR", output)
+        self.assertIn("Failed to download", output)
+        self.assertIn(TEST_ASSET_ID, output)
+
+        # Check that warning about skipping was written
+        self.assertIn("Skipping update", output)
+
+
+class RefreshCommandErrorHandlingMixin:
+    """
+    A mixin class for testing error handling in refresh commands
+    ('refresh_bynder_images', 'refresh_bynder_documents', 'refresh_bynder_videos').
+    """
+
+    command_name: str = ""
+    factory_class: Type
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.test_obj = cls.factory_class(bynder_id=TEST_ASSET_ID)
+
+    def setUp(self):
+        super().setUp()
+
+        # Define a mock to stand-in for the Bynder API client
+        self.mock_api_client = mock.Mock()
+        self.mock_api_client.media_info.return_value = TEST_ASSET_DATA
+
+    def call_command_with_error(self, error):
+        """
+        Calls the command with mocked API client and update_from_asset_data
+        that raises the specified error.
+        """
+        stdout = StringIO()
+
+        with (
+            mock.patch(
+                "wagtail_bynder.management.commands.base.get_bynder_client",
+                return_value=mock.Mock(asset_bank_client=self.mock_api_client),
+            ),
+            mock.patch.object(
+                self.test_obj.__class__, "update_from_asset_data", side_effect=error
+            ),
+        ):
+            call_command(
+                self.command_name,
+                stdout=stdout,
+                stderr=StringIO(),
+            )
+
+        return stdout.getvalue()
+
+    def test_handles_download_errors_gracefully(self):
+        """Test that command handles download errors without crashing"""
+        error = BynderAssetDownloadError(
+            "Server error downloading 'test.jpg' from Bynder. "
+        )
+        output = self.call_command_with_error(error)
+
+        # Check that error was written to stdout
+        self.assertIn("ERROR", output)
+        self.assertIn("Failed to download", output)
+
+
+class UpdateStaleImagesErrorHandlingTestCase(SyncCommandErrorHandlingMixin, TestCase):
+    """
+    Tests for error handling in the 'update_stale_images' management command.
+    """
+
+    command_name = "update_stale_images"
+    factory_class = CustomImageFactory
+
+
+class UpdateStaleDocumentsErrorHandlingTestCase(
+    SyncCommandErrorHandlingMixin, TestCase
+):
+    """
+    Tests for error handling in the 'update_stale_documents' management command.
+    """
+
+    command_name = "update_stale_documents"
+    factory_class = CustomDocumentFactory
+
+
+class UpdateStaleVideosErrorHandlingTestCase(SyncCommandErrorHandlingMixin, TestCase):
+    """
+    Tests for error handling in the 'update_stale_videos' management command.
+    """
+
+    command_name = "update_stale_videos"
+    factory_class = VideoFactory
+
+
+class RefreshImagesErrorHandlingTestCase(RefreshCommandErrorHandlingMixin, TestCase):
+    """
+    Tests for error handling in the 'refresh_bynder_images' management command.
+    """
+
+    command_name = "refresh_bynder_images"
+    factory_class = CustomImageFactory
+
+
+class RefreshDocumentsErrorHandlingTestCase(RefreshCommandErrorHandlingMixin, TestCase):
+    """
+    Tests for error handling in the 'refresh_bynder_documents' management command.
+    """
+
+    command_name = "refresh_bynder_documents"
+    factory_class = CustomDocumentFactory
+
+
+class RefreshVideosErrorHandlingTestCase(RefreshCommandErrorHandlingMixin, TestCase):
+    """
+    Tests for error handling in the 'refresh_bynder_videos' management command.
+    """
+
+    command_name = "refresh_bynder_videos"
     factory_class = VideoFactory
 
 

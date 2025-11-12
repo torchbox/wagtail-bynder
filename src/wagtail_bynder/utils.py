@@ -1,6 +1,7 @@
 import mimetypes
 import os
 
+from http import HTTPStatus
 from io import BytesIO
 
 import requests
@@ -14,7 +15,7 @@ from django.template.defaultfilters import filesizeformat
 from wagtail.models import Collection
 from willow import Image
 
-from .exceptions import BynderAssetFileTooLarge
+from .exceptions import BynderAssetDownloadError, BynderAssetFileTooLarge
 
 
 _DEFAULT_COLLECTION = Local()
@@ -24,11 +25,21 @@ def download_file(
     url: str, max_filesize: int, max_filesize_setting_name: str
 ) -> InMemoryUploadedFile:
     name = os.path.basename(url)
+    response = requests.get(url, timeout=20, stream=True)
 
-    # Stream file to memory
+    # Make sure we don't store error responses instead of the file requested
+    if response.status_code != HTTPStatus.OK:
+        raise BynderAssetDownloadError(
+            f"Server error downloading '{name}' from Bynder. "
+        )
+
     file = BytesIO()
-    for line in requests.get(url, timeout=20, stream=True):
-        file.write(line)
+    # Stream the file to memory. We use iter_content() instead of the default iterator for requests.Response,
+    # as the latter uses iter_lines() which isn't suitable for streaming binary data.
+    for chunk in response.iter_content():
+        if not chunk:
+            continue
+        file.write(chunk)
         if file.tell() > max_filesize:
             file.truncate(0)
             raise BynderAssetFileTooLarge(

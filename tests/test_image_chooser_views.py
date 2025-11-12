@@ -5,6 +5,8 @@ from django.urls import reverse, reverse_lazy
 from testapp.factories import CustomImageFactory
 from wagtail.test.utils import WagtailTestUtils
 
+from wagtail_bynder.exceptions import BynderAssetDownloadError
+
 from .utils import TEST_ASSET_ID
 
 
@@ -106,3 +108,45 @@ class TestImageChosenView(TransactionTestCase, WagtailTestUtils):
                 },
             },
         )
+
+    def test_returns_error_step_when_download_fails(self):
+        """Test that download errors return an error step instead of crashing"""
+        with mock.patch(
+            "wagtail_bynder.views.image.ImageChosenView.create_object",
+        ) as create_object_mock:
+            # Mock create_object to raise download error
+            create_object_mock.side_effect = BynderAssetDownloadError(
+                "Server error downloading 'test.jpg' from Bynder. "
+            )
+
+            response = self.client.get(str(self.url))
+
+        # Should return error step, not crash
+        self.assertEqual(response.status_code, 200)
+        response_data = response.json()
+        self.assertEqual(response_data["step"], "error")
+        self.assertIn("error_message", response_data)
+        self.assertIn("Server error downloading", response_data["error_message"])
+
+    @override_settings(BYNDER_SYNC_EXISTING_IMAGES_ON_CHOOSE=True)
+    def test_returns_error_step_when_update_fails(self):
+        """Test that download errors during update return an error step"""
+        # Create an image with a matching bynder_id
+        CustomImageFactory.create(bynder_id=TEST_ASSET_ID)
+
+        with mock.patch(
+            "wagtail_bynder.views.image.ImageChosenView.update_object",
+        ) as update_object_mock:
+            # Mock update_object to raise download error
+            update_object_mock.side_effect = BynderAssetDownloadError(
+                "Server error downloading 'test.jpg' from Bynder. "
+            )
+
+            response = self.client.get(str(self.url))
+
+        # Should return error step, not crash
+        self.assertEqual(response.status_code, 200)
+        response_data = response.json()
+        self.assertEqual(response_data["step"], "error")
+        self.assertIn("error_message", response_data)
+        self.assertIn("Server error downloading", response_data["error_message"])
