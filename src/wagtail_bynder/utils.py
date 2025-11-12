@@ -36,9 +36,8 @@ def download_file(
     file = BytesIO()
     # Stream the file to memory. We use iter_content() instead of the default iterator for requests.Response,
     # as the latter uses iter_lines() which isn't suitable for streaming binary data.
-    for chunk in response.iter_content():
-        if not chunk:
-            continue
+    # Get data in largish 8KB chunks, for more performant streaming while staying within CPU cache limits
+    for chunk in response.iter_content(chunk_size=8192):
         file.write(chunk)
         if file.tell() > max_filesize:
             file.truncate(0)
@@ -47,6 +46,11 @@ def download_file(
             )
 
     size = file.tell()
+    # Catch empty case where iter_content wouldn't have iterated
+    if size == 0:
+        raise BynderAssetDownloadError(
+            f"Downloaded file '{name}' from Bynder is empty."
+        )
     file.seek(0)
 
     content_type, charset = mimetypes.guess_type(name)
