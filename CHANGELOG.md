@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+
+### Added
+
+- Support for Django 5.2 LTS and Django 6.0.
+- Support for Wagtail 7.0 LTS through 7.4 LTS.
+- Support for Python 3.13 and Python 3.14.
+
+### Removed
+
+- Support for Django 4.2, 5.0 and 5.1 (EOL).
+- Support for Wagtail 5.2, 6.1, 6.2 and 6.3 (outside the current Wagtail support window).
+- Dead `WAGTAIL_VERSION < (6, 3)` compatibility branches in `views/image.py` and `views/document.py`, including the
+  `ClassBasedWagtailImageEditView` / `ClassBasedDocumentEditView` shims.
+
+
 ## [0.8.1] - 2025-11-12
 
 ### Changed
