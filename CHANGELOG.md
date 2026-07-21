@@ -9,14 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Support for Django 5.2 LTS and Django 6.0, Wagtail 7.0 LTS through 7.4 LTS
-- Support for Python 3.13 and Python 3.14.
+- Official support for Python 3.13/3.14, Django 5.2 LTS and Django 6.0, Wagtail 7.0 LTS through 7.4 LTS ([#45](https://github.com/torchbox/wagtail-bynder/pull/45)) @nickmoreton
 
 ### Removed
 
-- Support for Django 4.2, 5.0 and 5.1 (EOL), Wagtail 5.2, 6.1, 6.2 and 6.3 (outside the current Wagtail support window).
-- Dead `WAGTAIL_VERSION < (6, 3)` compatibility branches in `views/image.py` and `views/document.py`, including the
-  `ClassBasedWagtailImageEditView` / `ClassBasedDocumentEditView` shims.
+- Support for Django < 5.2, Wagtail < 7.0. ([#45](https://github.com/torchbox/wagtail-bynder/pull/45)) @nickmoreton
 
 ## [0.8.1] - 2025-11-12
 

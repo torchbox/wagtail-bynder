@@ -21,7 +21,7 @@ env:
   TOX_TESTENV_PASSENV: FORCE_COLOR
   PIP_DISABLE_PIP_VERSION_CHECK: '1'
   PIP_NO_PYTHON_VERSION_WARNING: '1'
-  PYTHON_LATEST: '3.13'
+  PYTHON_LATEST: '3.14'
 
 jobs:
   test-latest:
@@ -76,9 +76,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - python-version: ["3.11", "3.12", "3.13"]
-          - db: ["sqlite"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+        db: ["sqlite"]
     steps:
       - uses: actions/checkout@v4
 
@@ -95,9 +94,6 @@ jobs:
         run: python -Im flit build --format wheel
 
       - name: Test
-        env:
-          TOXENV: py${{ matrix.python-version }}-django${{ matrix.django }}-wagtail${{ matrix.wagtail }}-sqlite
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/wagtail_localize_git
         run: tox --installpkg ./dist/*.whl
 
       - name: ⬆️ Upload coverage data
