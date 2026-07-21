@@ -56,6 +56,7 @@ def editor_js():
             """,
             static("bynder/js/video-chooser-modal.js"),
         )
+    return ""
 
 
 if get_video_model():
