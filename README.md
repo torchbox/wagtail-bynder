@@ -19,6 +19,12 @@ to manage their digital assets, which includes the images and documents used in 
 The data flow is one way: Bynder assets are always treated as the source of truth, and Wagtail uses read-only API access
 to create copies of assets and keep them up-to-date.
 
+## Compatibility
+
+- Python 3.11, 3.12, 3.13, 3.14
+- Django 5.2 LTS, 6.0
+- Wagtail 7.0 LTS, 7.1, 7.2, 7.3, 7.4 LTS
+
 ## How it works
 
 The main points of integration are Wagtail's image and document chooser views, which are patched by this app to show an

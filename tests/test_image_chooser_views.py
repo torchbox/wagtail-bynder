@@ -51,6 +51,7 @@ class TestImageChosenView(TransactionTestCase, WagtailTestUtils):
                     "title": image.title,
                     "preview": mock.ANY,
                     "edit_url": reverse("wagtailimages:edit", args=[image.id]),
+                    "default_alt_text": mock.ANY,
                 },
             },
         )
@@ -78,6 +79,7 @@ class TestImageChosenView(TransactionTestCase, WagtailTestUtils):
                     "title": image.title,
                     "preview": mock.ANY,
                     "edit_url": reverse("wagtailimages:edit", args=[image.id]),
+                    "default_alt_text": mock.ANY,
                 },
             },
         )
@@ -105,6 +107,7 @@ class TestImageChosenView(TransactionTestCase, WagtailTestUtils):
                     "title": image.title,
                     "preview": mock.ANY,
                     "edit_url": reverse("wagtailimages:edit", args=[image.id]),
+                    "default_alt_text": mock.ANY,
                 },
             },
         )

@@ -3,11 +3,11 @@ ci:
   autoupdate_schedule: 'quarterly'
 
 default_language_version:
-  python: python3.11
+  python: python3.13
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v6.0.0
     hooks:
       - id: check-added-large-files
       - id: check-case-conflict
@@ -21,7 +21,7 @@ repos:
       - id: trailing-whitespace
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # keep in sync with .github/workflows/ruff.yml
-    rev: 'v0.5.0'
+    rev: 'v0.15.14'
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]

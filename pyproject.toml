@@ -18,20 +18,20 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Framework :: Django",
-    "Framework :: Django :: 4.2",
-    "Framework :: Django :: 5.0",
-    "Framework :: Django :: 5.1",
+    "Framework :: Django :: 5.2",
+    "Framework :: Django :: 6.0",
     "Framework :: Wagtail",
-    "Framework :: Wagtail :: 5",
-    "Framework :: Wagtail :: 6",
+    "Framework :: Wagtail :: 7",
 ]
 
 dynamic = ["version"]
 requires-python = ">=3.11"
 dependencies = [
-    "Django>=4.2",
-    "Wagtail>=5.2",
+    "Django>=5.2",
+    "Wagtail>=7.0",
     "bynder-sdk>=1.1.5,<2.0"
 ]
 
@@ -40,7 +40,7 @@ testing = [
     "dj-database-url>=2.1.0,<3.0",
     "wagtail_factories>=4.1.0,<5.0",
     "responses>=0.24,<1",
-    "coverage>=7.0,<8.0",
+    "coverage>=7.10,<8.0",
     "freezegun>=1.1,<2",
 ]
 

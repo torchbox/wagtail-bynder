@@ -76,10 +76,10 @@ class BaseTemplateOverrideTests(TestCase, WagtailTestUtils):
         html = response.content.decode("utf-8")
 
         self.assertIn(
-            f'<script src="{ settings.STATIC_URL }wagtailadmin/js/chooser-modal-handler-factory.js">',
+            f'<script src="{settings.STATIC_URL}wagtailadmin/js/chooser-modal-handler-factory.js">',
             html,
         )
         self.assertIn(
-            f'<script src="{ settings.STATIC_URL }bynder/js/compactview-v4.0.0.js">',
+            f'<script src="{settings.STATIC_URL}bynder/js/compactview-v4.0.0.js">',
             html,
         )

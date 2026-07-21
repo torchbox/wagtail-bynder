@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Official support for Python 3.13/3.14, Django 5.2 LTS and Django 6.0, Wagtail 7.0 LTS through 7.4 LTS ([#45](https://github.com/torchbox/wagtail-bynder/pull/45)) @nickmoreton
+
+### Removed
+
+- Support for Django < 5.2, Wagtail < 7.0. ([#45](https://github.com/torchbox/wagtail-bynder/pull/45)) @nickmoreton
 
 ## [0.8.1] - 2025-11-12
 

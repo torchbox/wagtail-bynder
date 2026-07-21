@@ -296,7 +296,7 @@ class BynderSyncedImage(BynderAssetWithFileMixin, AbstractImage):
         """
 
         # Write to filesystem to avoid using memory for the same image
-        tmp = NamedTemporaryFile(mode="w+b", dir=settings.FILE_UPLOAD_TEMP_DIR)
+        tmp = NamedTemporaryFile(mode="w+b", dir=settings.FILE_UPLOAD_TEMP_DIR)  # noqa: SIM115
         details = self.convert_downloaded_image(file, tmp)
 
         # The original file is now redundant and can be deleted, making
